@@ -528,14 +528,14 @@ actual fun traceExecutable(
                 arguments.add(sys.toString())
         }
         if (sandbox.syscall_restrictions_stage_2.isNotEmpty()) {
-                arguments.add("-two-stage")
+                arguments.add("-two-step")
                 arguments.add(sandbox.condition.toString())
                 arguments.add(sandbox.syscall_restrictions_stage_2.size.toString())
                 for (sys in sandbox.syscall_restrictions_stage_2) {
                         arguments.add(sys.toString())
                 }
         } else {
-                arguments.add("one-stage")
+                arguments.add("-one-step")
         }
 
         arguments.add(executablePath)

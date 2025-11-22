@@ -61,6 +61,10 @@ int set_nonblocking(int fd) {
 
     return 0;
 }
+#include <unordered_set>
+std::unordered_set<uint32_t> syscalls_to_restrict_stage_2{};
+uint32_t condition = UINT32_MAX;
+bool in_stage_2 = false;
 
 // Function to handle the tracing logic
 void run_tracer(pid_t child_pid) {
@@ -133,18 +137,23 @@ void run_tracer(pid_t child_pid) {
                 break;
             }
 
-            // On syscall entry (before it executes), the number is in orig_rax
-            // On syscall exit (after it executes), the return value is in rax
-            // Since we only want to report the number *once*, we check for a specific state.
-
-            // For simplicity and only reporting the number, we report at *entry*
-            // An even simpler approach is just to print at every stop and let the user see duplicates
-
-            // For this simple version, we'll print at *every* stop (entry and exit)
-            // and let the user see the duplicates which are expected with PTRACE_SYSCALL.
-
             syscall_num = regs.SYSCALL_REG_FIELD;
             printf("%ld\n", syscall_num);
+            fprintf(stderr, "%ld\n", syscall_num);
+            if (in_stage_2 && syscalls_to_restrict_stage_2.find(syscall_num) != syscalls_to_restrict_stage_2.end()) {
+                // KILL ITTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+                if (kill(child_pid, SIGKILL) < 0) {
+                    fprintf(stderr, "killing did not work\n");
+                } else
+                    fprintf(stderr, "Killed my child hehe :>\n");
+            }
+
+            if (condition != UINT32_MAX && syscall_num == condition) {
+                fprintf(stderr, "entering stage 2\n");
+                // sandbox_current_process_seccomp(syscalls_to_restrict_stage_2);
+                in_stage_2 = true;
+                condition = UINT32_MAX;
+            }
         } else {
             // If it stopped for another reason (e.g., signal delivery), continue it
             if (ptrace(PTRACE_CONT, child_pid, 0, WSTOPSIG(status)) == -1) {
@@ -180,12 +189,17 @@ int main(int argc, char* argv[]) {
     bool stage_2 = (strncmp(argv[2 + num_syscalls_to_restrict], "-two-step", strlen("-two-step")) == 0);
     fprintf(stderr, "Two step sandbox? %d\n", stage_2);
 
-    std::vector<uint32_t> syscalls_to_restrict_stage_2;
     uint32_t num_syscalls_to_restrict_stage_2 = 0;
+
     if (stage_2) {
-        num_syscalls_to_restrict_stage_2 = atoi(argv[2 + num_syscalls_to_restrict + 1]);
+        fprintf(stderr, "two stage sandboxing active\n");
+        condition = atoi(argv[2 + num_syscalls_to_restrict + 1]);
+        fprintf(stderr, "condition: %ld\n", condition);
+        num_syscalls_to_restrict_stage_2 = atoi(argv[2 + num_syscalls_to_restrict + 2]);
+
+        fprintf(stderr, "supposedly %ld args for stage 2 sandbox\n", num_syscalls_to_restrict_stage_2);
         for (size_t i = 0; i < num_syscalls_to_restrict_stage_2; ++i) {
-            syscalls_to_restrict.push_back(atoi(argv[2 + num_syscalls_to_restrict + 2 + i]));
+            syscalls_to_restrict_stage_2.insert(atoi(argv[2 + num_syscalls_to_restrict + 3 + i]));
         }
     }
 
@@ -197,7 +211,8 @@ int main(int argc, char* argv[]) {
     for (auto& syscall : syscalls_to_restrict_stage_2) {
         fprintf(stderr, "%d ", syscall);
     }
-    fprintf(stderr, "executing %s", argv[2 + num_syscalls_to_restrict + num_syscalls_to_restrict_stage_2 + 1]);
+    fprintf(stderr, "\n\nexecuting %s\n",
+            argv[2 + num_syscalls_to_restrict + num_syscalls_to_restrict_stage_2 + ((stage_2) ? 3 : 1)]);
 
     pid_t pid = fork();
 
@@ -240,8 +255,8 @@ int main(int argc, char* argv[]) {
         }
 
         sandbox_current_process_seccomp(syscalls_to_restrict);
-        execvp(argv[2 + num_syscalls_to_restrict + num_syscalls_to_restrict_stage_2 + 1],
-               argv + 2 + num_syscalls_to_restrict + num_syscalls_to_restrict_stage_2 + 1);
+        execvp(argv[2 + num_syscalls_to_restrict + num_syscalls_to_restrict_stage_2 + ((stage_2) ? 3 : 1)],
+               argv + 2 + num_syscalls_to_restrict + num_syscalls_to_restrict_stage_2 + ((stage_2) ? 3 : 1));
 
         // execvp only returns if an error occurred
         perror("execvp");
