@@ -96,28 +96,28 @@ val x64_linux_syscall_num_to_name =
                 Syscall("setitimer", OperationType.Unclassified),
                 Syscall("getpid", OperationType.Unclassified),
                 Syscall("sendfile", OperationType.Unclassified),
-                Syscall("socket", OperationType.Unclassified),
-                Syscall("connect", OperationType.Unclassified),
-                Syscall("accept", OperationType.Unclassified),
-                Syscall("sendto", OperationType.Unclassified),
-                Syscall("recvfrom", OperationType.Unclassified),
-                Syscall("sendmsg", OperationType.Unclassified),
-                Syscall("recvmsg", OperationType.Unclassified),
+                Syscall("socket", OperationType.Network),
+                Syscall("connect", OperationType.Network),
+                Syscall("accept", OperationType.Network),
+                Syscall("sendto", OperationType.Network),
+                Syscall("recvfrom", OperationType.Network),
+                Syscall("sendmsg", OperationType.Network),
+                Syscall("recvmsg", OperationType.Network),
                 Syscall("shutdown", OperationType.Unclassified),
                 Syscall("bind", OperationType.Unclassified),
-                Syscall("listen", OperationType.Unclassified),
-                Syscall("getsockname", OperationType.Unclassified),
-                Syscall("getpeername", OperationType.Unclassified),
-                Syscall("socketpair", OperationType.Unclassified),
-                Syscall("setsockopt", OperationType.Unclassified),
-                Syscall("getsockopt", OperationType.Unclassified),
-                Syscall("clone", OperationType.Unclassified),
-                Syscall("fork", OperationType.Unclassified),
-                Syscall("vfork", OperationType.Unclassified),
+                Syscall("listen", OperationType.Network),
+                Syscall("getsockname", OperationType.Network),
+                Syscall("getpeername", OperationType.Network),
+                Syscall("socketpair", OperationType.Network),
+                Syscall("setsockopt", OperationType.Network),
+                Syscall("getsockopt", OperationType.Network),
+                Syscall("clone", OperationType.ProcessManagement),
+                Syscall("fork", OperationType.ProcessManagement),
+                Syscall("vfork", OperationType.ProcessManagement),
                 Syscall("execve", OperationType.Unclassified),
                 Syscall("exit", OperationType.Unclassified),
                 Syscall("wait4", OperationType.Unclassified),
-                Syscall("kill", OperationType.Unclassified),
+                Syscall("kill", OperationType.ProcessManagement),
                 Syscall("uname", OperationType.Unclassified),
                 Syscall("semget", OperationType.Unclassified),
                 Syscall("semop", OperationType.Unclassified),
@@ -456,6 +456,16 @@ actual fun getNumSyscalls(): Int {
         return x64_linux_syscall_num_to_name.size
 }
 
+actual fun getSyscallsOfType(type: OperationType): ArrayList<String> {
+        var fittingSyscalls = ArrayList<String>()
+        for (syscall in x64_linux_syscall_num_to_name) {
+                if (syscall.type == type) {
+                        fittingSyscalls.add(syscall.name)
+                }
+        }
+        return fittingSyscalls
+}
+
 actual fun traceExecutable(
         executablePath: String,
         args: List<String>,
@@ -477,11 +487,11 @@ actual fun traceExecutable(
 
         val (code, output) = executeExecutable(executable, arguments)
 
-       // println("\n--- Execution Result ---")
-        //println("Exit Code: $code")
-        //println("Output:")
-        //println(output)
-        //println("------------------------")
+        // println("\n--- Execution Result ---")
+        // println("Exit Code: $code")
+        // println("Output:")
+        // println(output)
+        // println("------------------------")
 
         return output
 }

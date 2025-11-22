@@ -35,6 +35,8 @@ data class Syscall(val name: String, val type: OperationType)
 expect fun syscallNumToSyscall(num: Int): Syscall
 expect fun syscallNameToNum(name: String): Int
 expect fun getNumSyscalls(): Int
+expect fun getSyscallsOfType(type: OperationType): ArrayList<String>
+
 
 expect fun traceExecutable(
         executablePath: String,
@@ -114,6 +116,19 @@ fun parsePolicyFile(path: String): SandboxingOptions {
     return sandbox;
 }
 
+fun createPolicy(restrictions: ArrayList<OperationType>, path: String) {
+    var output_policy = "ALLOW DEFAULT";
+    for (restriction in restrictions) {
+        var syscall_names = getSyscallsOfType(restriction);
+        for (syscall in syscall_names) {
+            output_policy += "\nDENY " + syscall;
+        }
+    }
+    File(path).writeText(output_policy);
+}
+
+
+
 fun getSyscallList(): ArrayList<Syscall> {
 
     val sandbox_config = parsePolicyFile("/tmp/HackaTUM/policy.aegis");
@@ -147,6 +162,9 @@ fun App() {
             AnimatedVisibility(showContent) {
                 val greeting = remember { Greeting().greet() }
                 println(getSyscallList())
+                val file_only_policy = ArrayList<OperationType>(listOf(OperationType.Network, OperationType.ProcessManagement));
+
+                createPolicy(file_only_policy, "/tmp/HackaTUM/gen_policy.aegis")
                 Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
