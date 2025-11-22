@@ -6,6 +6,11 @@ enum class OperationType {
     File,
     Network,
     ProcessManagement,
+    Memory,
+    Signal,
+    Time,
+    Sync,
+    Resources,
     Unclassified
 }
 
