@@ -87,7 +87,7 @@ enum class Action {
     Allow, Deny
 }
 
-data class PolicyRule(val action: Action, val syscall_name: String) 
+data class PolicyRule(val action: Action, val syscall_name: String)
 
 fun parsePolicyFile(path: String): SandboxingOptions {
     val bufferedReader: BufferedReader = File(path).bufferedReader()
@@ -105,7 +105,7 @@ fun parsePolicyFile(path: String): SandboxingOptions {
         }
         println("Looking at rule");
         println(rule);
-        
+
         val parts = rule.split(" ")
         if(parts.size != 2) {
             println("Rule file malformed. Part size is not 2")
@@ -190,7 +190,7 @@ fun getSyscallList(): ArrayList<Syscall> {
         if (errChunk.isNotEmpty() && errChunk.isNotBlank()) {
             println("Tracer ERR: $errChunk")
         }
-        
+
         val appOutChunk = traceResult.appOut.drain()
         if (appOutChunk.isNotEmpty() && appOutChunk.isNotBlank()) {
              println("Tracer ERR: $appOutChunk")
@@ -200,9 +200,9 @@ fun getSyscallList(): ArrayList<Syscall> {
         if (appErrChunk.isNotEmpty() && appErrChunk.isNotBlank()) {
             println("Tracer ERR: $appErrChunk")
         }
-        
+
     if(last_time) break
-    
+
     if(!traceResult.tracerProc.isAlive())
     {
         last_time =true;
@@ -213,39 +213,28 @@ fun getSyscallList(): ArrayList<Syscall> {
     }
         Thread.sleep(100)
     }
-    
-   
+
+
     return syscalls_in_order
 }
 
 
 @Composable
 @Preview
-fun App() {
+fun App(filePicker: FilePicker) {
     MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
         Column(
-                modifier =
-                        Modifier.background(MaterialTheme.colorScheme.primaryContainer)
-                                .safeContentPadding()
-                                .fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            modifier =
+                Modifier.background(MaterialTheme.colorScheme.primaryContainer)
+                    .safeContentPadding()
+                    .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Button(onClick = { showContent = !showContent }) { Text("Click me!") }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                val file_only_policy = ArrayList<OperationType>(listOf(OperationType.Network, OperationType.ProcessManagement));
-                createPolicy(file_only_policy, "/tmp/HackaTUM/gen_policy.aegis")
-                getSyscallList();
+            val file_only_policy = ArrayList<OperationType>(listOf(OperationType.Network, OperationType.ProcessManagement));
+            createPolicy(file_only_policy, "/tmp/HackaTUM/gen_policy.aegis")
+            getSyscallList();
 
-                Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
-                }
-            }
+            Button(onClick = { filePicker.pickFile() }) { Text("Select File") }
         }
     }
 

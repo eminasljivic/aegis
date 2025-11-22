@@ -1,4 +1,4 @@
-package com.example.demo
+package at.sljivic.aegis
 
 import android.os.Build
 
