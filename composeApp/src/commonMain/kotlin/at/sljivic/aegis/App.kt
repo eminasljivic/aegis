@@ -67,9 +67,6 @@ data class TracingResult (
     val tracerProc: Process
 )
 
-
-
-
 expect fun traceExecutable(
         executablePath: String,
         args: List<String>,
@@ -159,7 +156,6 @@ fun createPolicy(restrictions: ArrayList<OperationType>, path: String) {
     }
     File(path).writeText(output_policy);
 }
-
 
 
 fun getSyscallList(): ArrayList<Syscall> {

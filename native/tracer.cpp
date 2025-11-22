@@ -13,9 +13,14 @@
 #include <unistd.h>
 #include <vector>
 
-// On x86-64, the syscall number is in the orig_rax register
-#ifndef __x86_64__
-#error "This code is written for x86-64 architecture"
+#if defined(__x86_64__)
+#define SYSCALL_REG_FIELD orig_rax
+#define ARCH_REGS_TYPE struct user_regs_struct
+#elif defined(__aarch64__)
+#define SYSCALL_REG_FIELD regs[8]
+#define ARCH_REGS_TYPE struct user_regs_struct
+#else
+#error "Unsupported architecture"
 #endif
 
 #include <errno.h>
@@ -67,7 +72,7 @@ void run_tracer(pid_t child_pid) {
     }
 
     while (WIFSTOPPED(status)) {
-        struct user_regs_struct regs;
+        ARCH_REGS_TYPE regs;
 
         // 1. Continue the child and stop at the next syscall entry or exit
         if (ptrace(PTRACE_SYSCALL, child_pid, 0, 0) == -1) {
@@ -127,7 +132,7 @@ void run_tracer(pid_t child_pid) {
             // For this simple version, we'll print at *every* stop (entry and exit)
             // and let the user see the duplicates which are expected with PTRACE_SYSCALL.
 
-            syscall_num = regs.orig_rax;
+            syscall_num = regs.SYSCALL_REG_FIELD;
             printf("%ld\n", syscall_num);
         } else {
             // If it stopped for another reason (e.g., signal delivery), continue it
@@ -163,7 +168,7 @@ int main(int argc, char* argv[]) {
         //  fprintf(stderr, "uid: %ld\n", (uint32_t)getuid());
         // Child process: The tracee
 
-    //    unlink("/tmp/HackaTUM/program_out_fifo");
+        //    unlink("/tmp/HackaTUM/program_out_fifo");
         mkfifo("/tmp/HackaTUM/program_out_fifo", 0777); // open("/dev/null", O_WRONLY);
         // int rfd_dummy = open("/tmp/HackaTUM/program_out_fifo", O_RDONLY | O_NONBLOCK);
         int fd = open("/tmp/HackaTUM/program_out_fifo", O_WRONLY);
@@ -178,7 +183,7 @@ int main(int argc, char* argv[]) {
             fprintf(stderr, "Error duplicating fd");
         }
 
-        //unlink("/tmp/HackaTUM/program_err_fifo");
+        // unlink("/tmp/HackaTUM/program_err_fifo");
         mkfifo("/tmp/HackaTUM/program_err_fifo", 0777); // open("/dev/null", O_WRONLY);
         //  int rfd2_dummy = open("/tmp/HackaTUM/program_err_fifo", O_RDONLY | O_NONBLOCK);
         int fd2 = open("/tmp/HackaTUM/program_err_fifo", O_WRONLY);
