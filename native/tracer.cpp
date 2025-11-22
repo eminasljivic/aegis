@@ -91,11 +91,23 @@ void run_tracer(pid_t child_pid) {
     }
 }
 
+#include "sandboxer.h"
+#include <cstdint>
+#include <vector>
+
 // Main function
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s <executable> [arg1 arg2 ...]\n", argv[0]);
+        fprintf(stderr, "Usage: %s <num_syscalls_to_restrict> [sysnr1 sysnr2 ... ] <executable> [arg1 arg2 ...]\n",
+                argv[0]);
         return EXIT_FAILURE;
+    }
+
+    uint32_t num_syscalls_to_restrict = atoi(argv[1]);
+    std::vector<uint32_t> syscalls_to_restrict;
+
+    for (size_t i = 0; i < num_syscalls_to_restrict; ++i) {
+        syscalls_to_restrict.push_back(atoi(argv[2 + i]));
     }
 
     pid_t pid = fork();
@@ -104,20 +116,23 @@ int main(int argc, char* argv[]) {
         perror("fork");
         return EXIT_FAILURE;
     } else if (pid == 0) {
+        //  fprintf(stderr, "uid: %ld\n", (uint32_t)getuid());
         // Child process: The tracee
         int fd = open("/dev/null", O_WRONLY);
         if (dup2(fd, 1) < 0) {
             // error handling
-        }
-        // Announce willingness to be traced
+        } // Announce willingness to be traced
         if (ptrace(PTRACE_TRACEME, 0, NULL, NULL) == -1) {
             perror("ptrace TRACEME");
             _exit(EXIT_FAILURE); // Use _exit in child after fork/ptrace
         }
 
+        sandbox_current_process_seccomp(syscalls_to_restrict);
         // Execute the target program and its arguments
+        // fprintf(stderr, "uid: %ld\n", (uint32_t)getuid());
         // argv[1] is the executable path, and argv+1 is the argument list (including the executable)
-        execvp(argv[1], argv + 1);
+        printf("executing %s\n", argv[1 + num_syscalls_to_restrict]);
+        execvp(argv[2 + num_syscalls_to_restrict], argv + 2 + num_syscalls_to_restrict);
 
         // execvp only returns if an error occurred
         perror("execvp");

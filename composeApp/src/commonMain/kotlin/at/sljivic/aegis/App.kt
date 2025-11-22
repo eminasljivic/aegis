@@ -17,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import at.sljivic.aegis.traceExecutable
 
 enum class OperationType {
     File,
@@ -33,7 +32,7 @@ expect fun syscallNumToSyscall(num: Int): Syscall
 expect fun traceExecutable(executablePath: String, args: List<String>, timeoutSeconds: Long): String
 
 fun getSyscallList(): ArrayList<Syscall> {
-    val nums = traceExecutable("ls", listOf("."),60).split("\n")
+    val nums = traceExecutable("ls", listOf("."), 60).split("\n")
     var syscalls_in_order = ArrayList<Syscall>()
     for (num in nums) {
         //   println("to int: $num");
