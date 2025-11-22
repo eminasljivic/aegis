@@ -435,10 +435,22 @@ val x64_linux_syscall_num_to_name =
                 Syscall("open_tree_attr", OperationType.Unclassified)
         )
 
-actual fun getSyscallList(): ArrayList<Syscall> {
+actual fun syscallNumToSyscall(num: Int): Syscall {
+    return x64_linux_syscall_num_to_name.get(num)
+}
+
+actual fun traceExecutable(
+        executablePath: String,
+        args: List<String>,
+        timeoutSeconds: Long
+): String {
+
     val executable = "/tmp/HackaTUM/tracer" // For Unix-like systems (Linux/macOS)
     // val executable = "cmd.exe" // Use "cmd.exe" for Windows
-    val arguments = listOf("ls", ".")
+
+    val arguments = ArrayList<String>()
+    arguments.add(executablePath)
+    arguments.addAll(args)
 
     println("Executing command: $executable ${arguments.joinToString(" ")}")
 
@@ -450,23 +462,12 @@ actual fun getSyscallList(): ArrayList<Syscall> {
     println(output)
     println("------------------------")
 
-    val nums = output.split("\n")
-    var syscalls_in_order = ArrayList<Syscall>()
-    for (num in nums) {
-        //   println("to int: $num");
-        val intNum = num.toInt()
-        val syscall = x64_linux_syscall_num_to_name.get(intNum)
-        // println("Syscall was: $syscall")
-        syscalls_in_order.add(syscall)
-    }
-    return syscalls_in_order
+    return output
 }
 
 fun main() = application {
     Window(
             onCloseRequest = ::exitApplication,
             title = "aegis",
-    ) {
-        App()
-    }
+    ) { App() }
 }
