@@ -3,9 +3,7 @@ package at.sljivic.aegis
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import java.io.File
-import java.lang.Process
 import kotlin.concurrent.thread
-import com.sun.tools.jdi.ProcessAttachingConnector
 
 /**
  * Executes an external command (executable) using ProcessBuilder.
@@ -321,8 +319,8 @@ val x64_linux_syscall_num_to_name =
                 Syscall("epoll_ctl_old", OperationType.Unclassified),
                 Syscall("epoll_wait_old", OperationType.Unclassified),
                 Syscall("remap_file_pages", OperationType.Unclassified),
-                Syscall("getdents64", OperationType.Unclassified),
-                Syscall("set_tid_address", OperationType.Unclassified),
+                Syscall("getdents64", OperationType.File),
+                Syscall("set_tid_address", OperationType.ProcessManagement),
                 Syscall("restart_syscall", OperationType.Unclassified),
                 Syscall("semtimedop", OperationType.Unclassified),
                 Syscall("fadvise64", OperationType.Unclassified),
@@ -361,7 +359,7 @@ val x64_linux_syscall_num_to_name =
                 Syscall("inotify_add_watch", OperationType.Unclassified),
                 Syscall("inotify_rm_watch", OperationType.Unclassified),
                 Syscall("migrate_pages", OperationType.Unclassified),
-                Syscall("openat", OperationType.Unclassified),
+                Syscall("openat", OperationType.File),
                 Syscall("mkdirat", OperationType.File),
                 Syscall("mknodat", OperationType.File),
                 Syscall("fchownat", OperationType.File),
@@ -376,9 +374,9 @@ val x64_linux_syscall_num_to_name =
                 Syscall("faccessat", OperationType.Unclassified),
                 Syscall("pselect6", OperationType.Unclassified),
                 Syscall("ppoll", OperationType.Unclassified),
-                Syscall("unshare", OperationType.Unclassified),
-                Syscall("set_robust_list", OperationType.Unclassified),
-                Syscall("get_robust_list", OperationType.Unclassified),
+                Syscall("unshare", OperationType.Memory),
+                Syscall("set_robust_list", OperationType.ProcessManagement),
+                Syscall("get_robust_list", OperationType.ProcessManagement),
                 Syscall("splice", OperationType.Unclassified),
                 Syscall("tee", OperationType.File),
                 Syscall("sync_file_range", OperationType.Unclassified),
@@ -422,7 +420,7 @@ val x64_linux_syscall_num_to_name =
                 Syscall("sched_getattr", OperationType.Unclassified),
                 Syscall("renameat2", OperationType.Unclassified),
                 Syscall("seccomp", OperationType.Unclassified),
-                Syscall("getrandom", OperationType.Unclassified),
+                Syscall("getrandom", OperationType.File),
                 Syscall("memfd_create", OperationType.Unclassified),
                 Syscall("kexec_file_load", OperationType.Unclassified),
                 Syscall("bpf", OperationType.Unclassified),
@@ -453,7 +451,7 @@ val x64_linux_syscall_num_to_name =
                 Syscall("pidfd_open", OperationType.Unclassified),
                 Syscall("clone3", OperationType.ProcessManagement),
                 Syscall("close_range", OperationType.Unclassified),
-                Syscall("openat2", OperationType.Unclassified),
+                Syscall("openat2", OperationType.File),
                 Syscall("pidfd_getfd", OperationType.Unclassified),
                 Syscall("faccessat2", OperationType.Unclassified),
                 Syscall("process_madvise", OperationType.Unclassified),

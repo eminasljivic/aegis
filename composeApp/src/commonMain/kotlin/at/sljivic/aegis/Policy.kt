@@ -51,7 +51,7 @@ fun parsePolicyFile(path: String): SandboxingOptions {
 
         val parts = rule.split(" ")
         if (parts.size != 2) {
-            println("Rule file malformed. Part size is not 2")
+           throw Exception("Policy malformed, Part size is not 2")
         }
         if (parts.get(0) == "ALLOW")
             rules.add(PolicyRule(Action.Allow, parts.get(1)));
@@ -60,10 +60,10 @@ fun parsePolicyFile(path: String): SandboxingOptions {
         else if(parts.get(0) == "WHEN") 
             rules.add(PolicyRule(Action.When, parts.get(1)));
         else
-            println("Rule file malformed. Action neither allow nor deny")
+           throw Exception("Policy malformed, Action neither allow nor deny")
     }
     if (rules.get(0).syscall_name != "DEFAULT") {
-        println("Rule file malformed. No default action")
+       throw Exception("Policy malformed, No default action")
     }
     var sandbox = SandboxingOptions(ArrayList<Int>(), ArrayList<Int>(),0)
     var stage_2 = false;
@@ -86,12 +86,19 @@ fun parsePolicyFile(path: String): SandboxingOptions {
     } else {
         // we need to deny all not explicitly mentioned
         // assume the numbers are sorted for now
+
+        val sorted = buildList {
+        if (rules.isNotEmpty()) add(rules.first())
+         addAll(
+        rules.drop(1).sortedBy { syscallNameToNum(it.syscall_name) }
+        )
+        }
+
         var curr_num = 0
-        for (rule in rules) {
-            if(!stage_2 && rule.action == Action.When) {
-                stage_2 = true;
-                sandbox.condition = syscallNameToNum(rule.syscall_name)
-                continue
+        for (rule in sorted) {
+            if(rule.action == Action.When) {
+                println("When not supported in deny default mode. Sorry!\n");
+                throw Exception("Policy malformed")
             }
             if (rule.syscall_name != "DEFAULT") // todo: how to skip in kotlin
             {
