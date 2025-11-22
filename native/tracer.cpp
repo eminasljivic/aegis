@@ -4,7 +4,10 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 #include <sys/ptrace.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/user.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -15,8 +18,39 @@
 #error "This code is written for x86-64 architecture"
 #endif
 
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <unistd.h>
+
+/**
+ * Sets a file descriptor to non-blocking mode.
+ * @param fd The file descriptor to modify.
+ * @return 0 on success, or -1 on failure (and sets errno).
+ */
+int set_nonblocking(int fd) {
+    // 1. Get the current file descriptor flags
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1) {
+        perror("fcntl F_GETFL");
+        return -1;
+    }
+
+    // 2. Add the O_NONBLOCK flag to the existing flags
+    flags |= O_NONBLOCK;
+
+    // 3. Set the new flags
+    if (fcntl(fd, F_SETFL, flags) == -1) {
+        perror("fcntl F_SETFL");
+        return -1;
+    }
+
+    return 0;
+}
+
 // Function to handle the tracing logic
 void run_tracer(pid_t child_pid) {
+    fprintf(stderr, "starting to trace...\n");
     int status;
     long syscall_num;
 
@@ -56,7 +90,18 @@ void run_tracer(pid_t child_pid) {
         // Check for child exit
         if (WIFEXITED(status)) {
             fprintf(stderr, "Child exited with status %d\n", WEXITSTATUS(status));
-            exit(status);
+            int output_file = open("/tmp/HackaTUM/res", O_RDWR | O_CREAT);
+            if (output_file < 0) {
+                perror("open");
+                fprintf(stderr, "Failed to open result file :(\n");
+                exit(1);
+            }
+            std::string status_as_str = std::to_string(status);
+            if (write(output_file, status_as_str.data(), status_as_str.size() + 1) < 0) {
+                fprintf(stderr, "Failed to write to result file :(\n");
+            }
+            close(output_file);
+            exit(0);
         }
 
         // Syscall stop is signaled by (WSTOPSIG(status) & 0x80)
@@ -117,10 +162,33 @@ int main(int argc, char* argv[]) {
     } else if (pid == 0) {
         //  fprintf(stderr, "uid: %ld\n", (uint32_t)getuid());
         // Child process: The tracee
-        int fd = open("/dev/null", O_WRONLY);
+
+    //    unlink("/tmp/HackaTUM/program_out_fifo");
+        mkfifo("/tmp/HackaTUM/program_out_fifo", 0777); // open("/dev/null", O_WRONLY);
+        // int rfd_dummy = open("/tmp/HackaTUM/program_out_fifo", O_RDONLY | O_NONBLOCK);
+        int fd = open("/tmp/HackaTUM/program_out_fifo", O_WRONLY);
+        if (fd < 0) {
+            fprintf(stderr, "Error opening fd");
+        }
+        // Dummy reader to keep the FIFO alive
+
+        // set_nonblocking(fd);
         if (dup2(fd, 1) < 0) {
             // error handling
-        } // Announce willingness to be traced
+            fprintf(stderr, "Error duplicating fd");
+        }
+
+        //unlink("/tmp/HackaTUM/program_err_fifo");
+        mkfifo("/tmp/HackaTUM/program_err_fifo", 0777); // open("/dev/null", O_WRONLY);
+        //  int rfd2_dummy = open("/tmp/HackaTUM/program_err_fifo", O_RDONLY | O_NONBLOCK);
+        int fd2 = open("/tmp/HackaTUM/program_err_fifo", O_WRONLY);
+        // set_nonblocking(fd2);
+        if (dup2(fd2, 2) < 0) {
+            // error handling
+            fprintf(stderr, "Error duplicating fd2");
+        }
+
+        // Announce willingness to be traced
         if (ptrace(PTRACE_TRACEME, 0, NULL, NULL) == -1) {
             perror("ptrace TRACEME");
             _exit(EXIT_FAILURE); // Use _exit in child after fork/ptrace

@@ -4,6 +4,9 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import java.io.File
 import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
+
+data class NTuple4<T1, T2, T3, T4>(val t1: T1, val t2: T2, val t3: T3, val t4: T4)
 
 /**
  * Executes an external command (executable) using ProcessBuilder.
@@ -16,10 +19,35 @@ fun executeExecutable(
         executablePath: String,
         args: List<String> = emptyList(),
         timeoutSeconds: Long = 60
-): Pair<Int, String> {
+): NTuple4<Int, String, String, String> {
         // 1. Combine the executable path and its arguments into a single list of command parts
         val commandParts = mutableListOf(executablePath).apply { addAll(args) }
 
+        val fifoOut = File("/tmp/HackaTUM/program_out_fifo")
+        val fifoErr = File("/tmp/HackaTUM/program_err_fifo")
+        val outBuffer = StringBuilder()
+        val errBuffer = StringBuilder()
+
+        // Start readers in background threads
+        val outThread =
+                thread(start = true) {
+                        fifoOut.inputStream().bufferedReader().use { br ->
+                                var line: String?
+                                while (br.readLine().also { line = it } != null) {
+                                        outBuffer.append(line).append('\n')
+                                }
+                        }
+                }
+
+        val errThread =
+                thread(start = true) {
+                        fifoErr.inputStream().bufferedReader().use { br ->
+                                var line: String?
+                                while (br.readLine().also { line = it } != null) {
+                                        errBuffer.append(line).append('\n')
+                                }
+                        }
+                }
         // 2. Create and configure the ProcessBuilder
         val process =
                 try {
@@ -33,7 +61,7 @@ fun executeExecutable(
                                 .start()
                 } catch (e: Exception) {
                         // Handle file not found, permission denied, etc.
-                        return Pair(-1, "Error starting process: ${e.message}")
+                        return NTuple4(-1, "Error starting process: ${e.message}", "", "")
                 }
 
         // 3. Wait for the process to finish
@@ -42,15 +70,21 @@ fun executeExecutable(
         if (!finished) {
                 // Process did not finish within the timeout
                 process.destroyForcibly()
-                return Pair(-2, "Process timed out after $timeoutSeconds seconds.")
+                return NTuple4(-2, "Process timed out after $timeoutSeconds seconds.", "", "")
         }
+
+        outThread.join()
+        errThread.join()
 
         // 4. Capture the output
         val output = process.inputStream.bufferedReader().use { it.readText() }
+        val errorOutput = process.errorStream.bufferedReader().use { it.readText() }
+        println(errorOutput)
+
         val exitCode = process.exitValue()
 
         // 5. Return the result
-        return Pair(exitCode, output.trim())
+        return NTuple4(exitCode, output.trim(), outBuffer.toString(), errBuffer.toString())
 }
 
 val x64_linux_syscall_num_to_name =
@@ -471,7 +505,7 @@ actual fun traceExecutable(
         args: List<String>,
         timeoutSeconds: Long,
         sandbox: SandboxingOptions
-): String {
+): TracingResult {
         val executable = "/tmp/HackaTUM/tracer"
 
         val arguments = ArrayList<String>()
@@ -485,7 +519,7 @@ actual fun traceExecutable(
 
         println("Executing command: $executable ${arguments.joinToString(" ")}")
 
-        val (code, output) = executeExecutable(executable, arguments)
+        val (code, output, appOut, appErr) = executeExecutable(executable, arguments)
 
         // println("\n--- Execution Result ---")
         // println("Exit Code: $code")
@@ -493,7 +527,7 @@ actual fun traceExecutable(
         // println(output)
         // println("------------------------")
 
-        return output
+        return TracingResult(output, appOut, appErr)
 }
 
 fun main() = application {

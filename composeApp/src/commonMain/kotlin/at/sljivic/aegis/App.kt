@@ -37,13 +37,21 @@ expect fun syscallNameToNum(name: String): Int
 expect fun getNumSyscalls(): Int
 expect fun getSyscallsOfType(type: OperationType): ArrayList<String>
 
+data class TracingResult (
+    val syscall_dump: String,
+    val appOut: String,
+    val appErr: String
+)
+
 
 expect fun traceExecutable(
         executablePath: String,
         args: List<String>,
         timeoutSeconds: Long,
         sandbox: SandboxingOptions
-): String
+): TracingResult
+
+
 
 
 enum class Action {
@@ -133,7 +141,7 @@ fun getSyscallList(): ArrayList<Syscall> {
  //   val sandbox_config = parsePolicyFile("/tmp/HackaTUM/policy.aegis");
     val sandbox_config = parsePolicyFile("/tmp/HackaTUM/gen_policy.aegis");
     val nums =
-            traceExecutable("/home/dominik/Workspace/HackaTUM/aegis/example_apps/only_simple_file_op", listOf(), 60, sandbox_config)
+            traceExecutable("id", listOf(), 60, sandbox_config).syscall_dump
                     .split("\n")
     var syscalls_in_order = ArrayList<Syscall>()
     for (num in nums) {
