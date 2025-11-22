@@ -59,7 +59,7 @@ fun getSyscallList(): ArrayList<Syscall> {
        val sandbox_config = parsePolicyFile("/tmp/HackaTUM/socket_when.aegis");
    // val sandbox_config = parsePolicyFile("/tmp/HackaTUM/gen_policy.aegis")
     var syscalls_in_order = ArrayList<Syscall>()
-    val traceResult = traceExecutable("/home/dominik/Workspace/HackaTUM/aegis/example_apps/a.out", listOf(), 60, sandbox_config)
+    val traceResult = traceExecutable("/home/dominik/Workspace/HackaTUM/aegis/example_apps/socket_time_transition", listOf(), 60, sandbox_config)
     // we trust it will die at some point
     var last_time = false
     while (true) {
