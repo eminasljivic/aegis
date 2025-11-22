@@ -1,13 +1,8 @@
 package at.sljivic.aegis
 
-import aegis.composeapp.generated.resources.Res
-import aegis.composeapp.generated.resources.compose_multiplatform
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -15,6 +10,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.example.compose.AppTheme
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.io.BufferedReader
 import java.io.File
 import org.jetbrains.compose.resources.painterResource
@@ -100,56 +97,55 @@ fun parsePolicyFile(path: String): SandboxingOptions {
     println("===========\n")
 
     for (rule in policyLines) {
-        if(rule == "" || rule.isBlank()) {
+        if (rule == "" || rule.isBlank()) {
             continue
         }
         println("Looking at rule");
         println(rule);
 
         val parts = rule.split(" ")
-        if(parts.size != 2) {
+        if (parts.size != 2) {
             println("Rule file malformed. Part size is not 2")
         }
-        if(parts.get(0) == "ALLOW")
+        if (parts.get(0) == "ALLOW")
             rules.add(PolicyRule(Action.Allow, parts.get(1)));
-        else if(parts.get(0) == "DENY")
+        else if (parts.get(0) == "DENY")
             rules.add(PolicyRule(Action.Deny, parts.get(1)));
-        else 
-           println("Rule file malformed. Action neither allow nor deny")
+        else
+            println("Rule file malformed. Action neither allow nor deny")
     }
-    if(rules.get(0).syscall_name != "DEFAULT") {
+    if (rules.get(0).syscall_name != "DEFAULT") {
         println("Rule file malformed. No default action")
     }
-   val sandbox = SandboxingOptions(ArrayList<Int>());
-    if(rules.get(0).action == Action.Allow) {
+    val sandbox = SandboxingOptions(ArrayList<Int>());
+    if (rules.get(0).action == Action.Allow) {
         // the rest is all denies - TODO check explciitly
-        for(rule in rules) {
-            if(rule.syscall_name != "DEFAULT") // todo: how to skip in kotlin
+        for (rule in rules) {
+            if (rule.syscall_name != "DEFAULT") // todo: how to skip in kotlin
             {
                 sandbox.syscall_restrictions.add(syscallNameToNum(rule.syscall_name));
             }
         }
-    }
-    else {
+    } else {
         // we need to deny all not explicitly mentioned
         // assume the numbers are sorted for now
         var curr_num = 0
-        for(rule in rules) {
-            if(rule.syscall_name != "DEFAULT") // todo: how to skip in kotlin
+        for (rule in rules) {
+            if (rule.syscall_name != "DEFAULT") // todo: how to skip in kotlin
             {
                 val policy_num = syscallNameToNum(rule.syscall_name)
-                while(curr_num != policy_num && curr_num < getNumSyscalls()) {
+                while (curr_num != policy_num && curr_num < getNumSyscalls()) {
                     sandbox.syscall_restrictions.add(curr_num);
                     curr_num++;
                 }
-                if(curr_num == policy_num) {
+                if (curr_num == policy_num) {
                     curr_num++;
                 }
             }
         }
     }
- 
-    
+
+
     return sandbox;
 }
 
@@ -222,7 +218,7 @@ fun getSyscallList(): ArrayList<Syscall> {
 @Composable
 @Preview
 fun App(filePicker: FilePicker) {
-    MaterialTheme {
+    AppTheme {
         Column(
             modifier =
                 Modifier.background(MaterialTheme.colorScheme.primaryContainer)
