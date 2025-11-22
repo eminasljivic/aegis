@@ -1,0 +1,256 @@
+#include <cstdint>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string>
+#include <sys/ptrace.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/user.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <vector>
+
+#if defined(__x86_64__)
+#define SYSCALL_REG_FIELD orig_rax
+#define ARCH_REGS_TYPE struct user_regs_struct
+#elif defined(__aarch64__)
+#define SYSCALL_REG_FIELD regs[8]
+#define ARCH_REGS_TYPE struct user_regs_struct
+#else
+#error "Unsupported architecture"
+#endif
+
+#ifndef NT_PRSTATUS
+#define NT_PRSTATUS 1
+#endif
+
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <jni.h>
+
+#include <android/log.h>
+
+#define LOG_TAG "AegisNative"
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+
+extern "C" {
+    /**
+     * Sets a file descriptor to non-blocking mode.
+     * @param fd The file descriptor to modify.
+     * @return 0 on success, or -1 on failure (and sets errno).
+     */
+    int set_nonblocking(int fd) {
+        // 1. Get the current file descriptor flags
+        int flags = fcntl(fd, F_GETFL, 0);
+        if (flags == -1) {
+            LOGI("fcntl F_GETFL");
+            return -1;
+        }
+
+        // 2. Add the O_NONBLOCK flag to the existing flags
+        flags |= O_NONBLOCK;
+
+        // 3. Set the new flags
+        if (fcntl(fd, F_SETFL, flags) == -1) {
+            LOGI("fcntl F_SETFL");
+            return -1;
+        }
+
+        return 0;
+    }
+
+    // Function to handle the tracing logic
+    void run_tracer(pid_t child_pid) {
+        LOGI("starting to trace...\n");
+        int status;
+        long syscall_num;
+
+        // Wait for the child to stop after PTRACE_TRACEME and before execvp returns
+        if (waitpid(child_pid, &status, 0) == -1) {
+            LOGI("waitpid");
+            return;
+        }
+
+        // Set PTRACE_O_TRACESYSGOOD option to distinguish syscall stops from other stops
+        if (ptrace(PTRACE_SETOPTIONS, child_pid, 0, PTRACE_O_TRACESYSGOOD) == -1) {
+            LOGI("ptrace SETOPTIONS");
+            // Non-fatal, continue without the option
+        }
+
+        while (WIFSTOPPED(status)) {
+            ARCH_REGS_TYPE regs;
+
+            // 1. Continue the child and stop at the next syscall entry or exit
+            if (ptrace(PTRACE_SYSCALL, child_pid, 0, 0) == -1) {
+                // Check if the error is due to the process having exited
+                if (errno == ESRCH)
+                    break;
+                LOGI("ptrace SYSCALL (continue)");
+                break;
+            }
+
+            // 2. Wait for the stop (either syscall entry or exit)
+            if (waitpid(child_pid, &status, 0) == -1) {
+                // Check if the error is due to the process having exited
+                if (errno == ECHILD || errno == ESRCH)
+                    break;
+                LOGI("waitpid");
+                break;
+            }
+
+            // Check for child exit
+            if (WIFEXITED(status)) {
+                LOGI("Child exited with status %d\n", WEXITSTATUS(status));
+                int output_file = open("/data/data/at.sljivic.aegis/files/res", O_RDWR | O_CREAT, 0644);
+                if (output_file < 0) {
+                    LOGI("open");
+                    LOGI("Failed to open result file :(\n");
+                    exit(1);
+                }
+                std::string status_as_str = std::to_string(status);
+                if (write(output_file, status_as_str.data(), status_as_str.size() + 1) < 0) {
+                    LOGI("Failed to write to result file :(\n");
+                }
+                close(output_file);
+                exit(0);
+            }
+            // Syscall stop is signaled by (WSTOPSIG(status) & 0x80)
+            // or by PTRACE_O_TRACESYSGOOD resulting in SIGTRAP | 0x80
+            if (WIFSTOPPED(status) && (WSTOPSIG(status) == (SIGTRAP | 0x80))) {
+                // 3. Get the register values
+                struct iovec iov;
+                iov.iov_base = &regs;
+                iov.iov_len  = sizeof(regs);
+
+                if (ptrace(PTRACE_GETREGSET, child_pid, (void*)NT_PRSTATUS, &iov) == -1) {
+                    if (errno == ESRCH)
+                        break;
+                    LOGI("ptrace GETREGS");
+                    break;
+                }
+
+                // On syscall entry (before it executes), the number is in orig_rax
+                // On syscall exit (after it executes), the return value is in rax
+                // Since we only want to report the number *once*, we check for a specific state.
+
+                // For simplicity and only reporting the number, we report at *entry*
+                // An even simpler approach is just to print at every stop and let the user see duplicates
+
+                // For this simple version, we'll print at *every* stop (entry and exit)
+                // and let the user see the duplicates which are expected with PTRACE_SYSCALL.
+
+                syscall_num = regs.SYSCALL_REG_FIELD;
+                printf("%ld\n", syscall_num);
+            } else {
+                // If it stopped for another reason (e.g., signal delivery), continue it
+                if (ptrace(PTRACE_CONT, child_pid, 0, WSTOPSIG(status)) == -1) {
+                    LOGI("ptrace CONT");
+                    break;
+                }
+            }
+        }
+    }
+
+    JNIEXPORT jint JNICALL
+    Java_at_sljivic_aegis_Tracer_runNativeMain(JNIEnv* env, jobject obj, jobjectArray args) {
+        pid_t pid = fork();
+
+        if (pid == -1) {
+            LOGI("fork");
+            return EXIT_FAILURE;
+        } else if (pid == 0) {
+            mkfifo("/data/data/at.sljivic.aegis/files/tracer_out_fifo", 0777);
+            int tracer_out_fd = open("/data/data/at.sljivic.aegis/files/tracer_out_fifo", O_WRONLY);
+
+            if (tracer_out_fd < 0) {
+                LOGI("Error opening tracer_fd");
+            }
+            if (dup2(tracer_out_fd, 1) < 0) {
+                LOGI("Error duplicating tracer_fd");
+            }
+
+            mkfifo("/data/data/at.sljivic.aegis/files/tracer_err_fifo", 0777);
+            int tracer_err_fd = open("/data/data/at.sljivic.aegis/files/tracer_err_fifo", O_WRONLY);
+
+            if (tracer_err_fd < 0) {
+                LOGI("Error opening tracer_fd");
+            }
+            if (dup2(tracer_err_fd, 2) < 0) {
+                LOGI("Error duplicating tracer_fd");
+            }
+
+            // Get number of arguments
+            jsize argc = env->GetArrayLength(args);
+
+            // Allocate C-style argv array
+            char** argv = (char**) malloc(sizeof(char*) * argc);
+
+            for (jsize i = 0; i < argc; i++) {
+                jstring str = (jstring) env->GetObjectArrayElement(args, i);
+                const char* cStr = env->GetStringUTFChars(str, nullptr);
+                argv[i] = strdup(cStr); // copy to argv
+                env->ReleaseStringUTFChars(str, cStr);
+            }
+
+            if (argc < 2) {
+                LOGI("Usage: %s <num_syscalls_to_restrict> [sysnr1 sysnr2 ... ] <executable> [arg1 arg2 ...]\n",
+                        argv[0]);
+                return EXIT_FAILURE;
+            }
+
+            uint32_t num_syscalls_to_restrict = atoi(argv[1]);
+            std::vector<uint32_t> syscalls_to_restrict;
+
+            for (size_t i = 0; i < num_syscalls_to_restrict; ++i) {
+                syscalls_to_restrict.push_back(atoi(argv[2 + i]));
+            }
+
+            pid_t pid = fork();
+
+            if (pid == -1) {
+                LOGI("fork");
+                return EXIT_FAILURE;
+            } else if (pid == 0) {
+                mkfifo("/data/data/at.sljivic.aegis/files/program_out_fifo", 0777);
+                int fd = open("/data/data/at.sljivic.aegis/files/program_out_fifo", O_WRONLY);
+
+                if (fd < 0) {
+                    LOGI("Error opening fd");
+                }
+
+                if (dup2(fd, 1) < 0) {
+                    LOGI("Error duplicating fd");
+                }
+
+                mkfifo("/data/data/at.sljivic.aegis/files/program_err_fifo", 0777);
+                int fd2 = open("/data/data/at.sljivic.aegis/files/program_err_fifo", O_WRONLY);
+
+                if (dup2(fd2, 2) < 0) {
+                    LOGI("Error duplicating fd2");
+                }
+
+                // Announce willingness to be traced
+                if (ptrace(PTRACE_TRACEME, 0, NULL, NULL) == -1) {
+                    LOGI("ptrace TRACEME");
+                    _exit(EXIT_FAILURE); // Use _exit in child after fork/ptrace
+                }
+
+                char *args[] = { (char*)"ls", (char*)".", nullptr };
+                execvp("ls", args);
+
+                //execvp("ls", "."); // argv[2 + num_syscalls_to_restrict], argv + 2 + num_syscalls_to_restrict;
+
+                LOGI("execvp");
+                _exit(EXIT_FAILURE);
+            } else {
+                run_tracer(pid);
+            }
+        }
+        return pid;
+    }
+}
