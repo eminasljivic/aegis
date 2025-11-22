@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
         // Execute the target program and its arguments
         // fprintf(stderr, "uid: %ld\n", (uint32_t)getuid());
         // argv[1] is the executable path, and argv+1 is the argument list (including the executable)
-        printf("executing %s\n", argv[1 + num_syscalls_to_restrict]);
+        // printf("executing %s\n", argv[1 + num_syscalls_to_restrict]);
         execvp(argv[2 + num_syscalls_to_restrict], argv + 2 + num_syscalls_to_restrict);
 
         // execvp only returns if an error occurred

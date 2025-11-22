@@ -17,38 +17,40 @@ fun executeExecutable(
         args: List<String> = emptyList(),
         timeoutSeconds: Long = 60
 ): Pair<Int, String> {
-    // 1. Combine the executable path and its arguments into a single list of command parts
-    val commandParts = mutableListOf(executablePath, "0").apply { addAll(args) }
+        // 1. Combine the executable path and its arguments into a single list of command parts
+        val commandParts = mutableListOf(executablePath).apply { addAll(args) }
 
-    // 2. Create and configure the ProcessBuilder
-    val process =
-            try {
-                ProcessBuilder(commandParts)
-                        .directory(
-                                File(".")
-                        ) // Optional: Set the working directory (defaults to current dir)
-                        .redirectErrorStream(false) // Merges stdout and stderr into one stream
-                        .start()
-            } catch (e: Exception) {
-                // Handle file not found, permission denied, etc.
-                return Pair(-1, "Error starting process: ${e.message}")
-            }
+        // 2. Create and configure the ProcessBuilder
+        val process =
+                try {
+                        ProcessBuilder(commandParts)
+                                .directory(
+                                        File(".")
+                                ) // Optional: Set the working directory (defaults to current dir)
+                                .redirectErrorStream(
+                                        false
+                                ) // Merges stdout and stderr into one stream
+                                .start()
+                } catch (e: Exception) {
+                        // Handle file not found, permission denied, etc.
+                        return Pair(-1, "Error starting process: ${e.message}")
+                }
 
-    // 3. Wait for the process to finish
-    val finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
+        // 3. Wait for the process to finish
+        val finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
 
-    if (!finished) {
-        // Process did not finish within the timeout
-        process.destroyForcibly()
-        return Pair(-2, "Process timed out after $timeoutSeconds seconds.")
-    }
+        if (!finished) {
+                // Process did not finish within the timeout
+                process.destroyForcibly()
+                return Pair(-2, "Process timed out after $timeoutSeconds seconds.")
+        }
 
-    // 4. Capture the output
-    val output = process.inputStream.bufferedReader().use { it.readText() }
-    val exitCode = process.exitValue()
+        // 4. Capture the output
+        val output = process.inputStream.bufferedReader().use { it.readText() }
+        val exitCode = process.exitValue()
 
-    // 5. Return the result
-    return Pair(exitCode, output.trim())
+        // 5. Return the result
+        return Pair(exitCode, output.trim())
 }
 
 val x64_linux_syscall_num_to_name =
@@ -436,38 +438,44 @@ val x64_linux_syscall_num_to_name =
         )
 
 actual fun syscallNumToSyscall(num: Int): Syscall {
-    return x64_linux_syscall_num_to_name.get(num)
+        return x64_linux_syscall_num_to_name.get(num)
 }
 
 actual fun traceExecutable(
         executablePath: String,
         args: List<String>,
-        timeoutSeconds: Long
+        timeoutSeconds: Long,
+        sandbox: SandboxingOptions
 ): String {
 
-    val executable = "/tmp/HackaTUM/tracer" // For Unix-like systems (Linux/macOS)
-    // val executable = "cmd.exe" // Use "cmd.exe" for Windows
+        val executable = "/tmp/HackaTUM/tracer" // For Unix-like systems (Linux/macOS)
+        // val executable = "cmd.exe" // Use "cmd.exe" for Windows
 
-    val arguments = ArrayList<String>()
-    arguments.add(executablePath)
-    arguments.addAll(args)
+        val arguments = ArrayList<String>()
+        println(sandbox.syscall_restrictions.size.toString())
+        arguments.add(sandbox.syscall_restrictions.size.toString())
+        for (sys in sandbox.syscall_restrictions) {
+                arguments.add(sys.toString())
+        }
+        arguments.add(executablePath)
+        arguments.addAll(args)
 
-    println("Executing command: $executable ${arguments.joinToString(" ")}")
+        println("Executing command: $executable ${arguments.joinToString(" ")}")
 
-    val (code, output) = executeExecutable(executable, arguments)
+        val (code, output) = executeExecutable(executable, arguments)
 
-    println("\n--- Execution Result ---")
-    println("Exit Code: $code")
-    println("Output:")
-    println(output)
-    println("------------------------")
+        println("\n--- Execution Result ---")
+        println("Exit Code: $code")
+        println("Output:")
+        println(output)
+        println("------------------------")
 
-    return output
+        return output
 }
 
 fun main() = application {
-    Window(
-            onCloseRequest = ::exitApplication,
-            title = "aegis",
-    ) { App() }
+        Window(
+                onCloseRequest = ::exitApplication,
+                title = "aegis",
+        ) { App() }
 }

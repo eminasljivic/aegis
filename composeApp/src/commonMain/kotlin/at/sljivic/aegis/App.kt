@@ -18,6 +18,8 @@ import androidx.compose.ui.Modifier
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
+data class SandboxingOptions(val syscall_restrictions: ArrayList<Int>)
+
 enum class OperationType {
     File,
     Network,
@@ -29,10 +31,16 @@ data class Syscall(val name: String, val type: OperationType)
 
 expect fun syscallNumToSyscall(num: Int): Syscall
 
-expect fun traceExecutable(executablePath: String, args: List<String>, timeoutSeconds: Long): String
+expect fun traceExecutable(
+        executablePath: String,
+        args: List<String>,
+        timeoutSeconds: Long,
+        sandbox: SandboxingOptions
+): String
 
 fun getSyscallList(): ArrayList<Syscall> {
-    val nums = traceExecutable("ls", listOf("."), 60).split("\n")
+    val nums =
+            traceExecutable("ls", listOf("."), 60, SandboxingOptions(ArrayList<Int>(102))).split("\n")
     var syscalls_in_order = ArrayList<Syscall>()
     for (num in nums) {
         //   println("to int: $num");
