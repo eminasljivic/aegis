@@ -20,6 +20,10 @@ import java.io.File
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import at.sljivic.aegis.PolicyRule
+import at.sljivic.aegis.syscallNumToSyscall
+import at.sljivic.aegis.getSyscallList
+import kotlin.concurrent.thread
+
 
 data class SandboxingOptions(val syscall_restrictions: ArrayList<Int>)
 
@@ -37,11 +41,36 @@ expect fun syscallNameToNum(name: String): Int
 expect fun getNumSyscalls(): Int
 expect fun getSyscallsOfType(type: OperationType): ArrayList<String>
 
+class StreamingBuffer {
+    private val sb = StringBuilder()
+
+    @Synchronized
+    fun append(line: String) {
+        sb.append(line).append('\n')
+    }
+
+    @Synchronized
+    fun drain(): String {
+        if (sb.isEmpty()) return ""
+        val out = sb.toString()
+        sb.setLength(0)  // clear
+        return out
+    }
+}
+
 data class TracingResult (
-    val syscall_dump: String,
-    val appOut: String,
-    val appErr: String
+    val tracerOut: StreamingBuffer,
+    val tracerErr: StreamingBuffer,
+    val appOut: StreamingBuffer,
+    val appErr: StreamingBuffer,
+    val tracerOutThread: Thread,
+    val tracerErrThread: Thread,
+    val appOutThread: Thread,
+    val appErrThread: Thread,
+    val tracerProc: Process
 )
+
+
 
 
 expect fun traceExecutable(
@@ -140,18 +169,55 @@ fun createPolicy(restrictions: ArrayList<OperationType>, path: String) {
 fun getSyscallList(): ArrayList<Syscall> {
  //   val sandbox_config = parsePolicyFile("/tmp/HackaTUM/policy.aegis");
     val sandbox_config = parsePolicyFile("/tmp/HackaTUM/gen_policy.aegis");
-    val nums =
-            traceExecutable("id", listOf(), 60, sandbox_config).syscall_dump
-                    .split("\n")
     var syscalls_in_order = ArrayList<Syscall>()
-    for (num in nums) {
-        if(num.isBlank()) continue
-        val intNum = num.toInt()
-        val syscall = syscallNumToSyscall(intNum)
-        syscalls_in_order.add(syscall)
+    val traceResult =
+            traceExecutable("id", listOf(), 60, sandbox_config)
+            // we trust it will die at some point
+            var last_time =false;
+   while (true) {
+        val outChunk = traceResult.tracerOut.drain()
+        if (outChunk.isNotEmpty() && outChunk.isNotBlank()) {
+            val outs = outChunk.split("\n")
+            for(out_syscall in outs) {
+                if(out_syscall.isEmpty() || out_syscall.isBlank() ) continue
+            val name = syscallNumToSyscall(out_syscall.toInt())
+             syscalls_in_order.add(name)
+            println("Tracer OUT: $name")
+            }
+        }
+
+        val errChunk = traceResult.tracerErr.drain()
+        if (errChunk.isNotEmpty() && errChunk.isNotBlank()) {
+            println("Tracer ERR: $errChunk")
+        }
+        
+        val appOutChunk = traceResult.appOut.drain()
+        if (appOutChunk.isNotEmpty() && appOutChunk.isNotBlank()) {
+             println("Tracer ERR: $appOutChunk")
+        }
+
+        val appErrChunk = traceResult.appErr.drain()
+        if (appErrChunk.isNotEmpty() && appErrChunk.isNotBlank()) {
+            println("Tracer ERR: $appErrChunk")
+        }
+        
+    if(last_time) break
+    
+    if(!traceResult.tracerProc.isAlive())
+    {
+        last_time =true;
+        traceResult.tracerOutThread.join()
+        traceResult.tracerErrThread.join()
+        traceResult.appErrThread.join()
+        traceResult.appOutThread.join()
     }
+        Thread.sleep(100)
+    }
+    
+   
     return syscalls_in_order
 }
+
 
 @Composable
 @Preview
@@ -170,7 +236,7 @@ fun App() {
                 val greeting = remember { Greeting().greet() }
                 val file_only_policy = ArrayList<OperationType>(listOf(OperationType.Network, OperationType.ProcessManagement));
                 createPolicy(file_only_policy, "/tmp/HackaTUM/gen_policy.aegis")
-                println(getSyscallList())
+                getSyscallList();
 
                 Column(
                         modifier = Modifier.fillMaxWidth(),
