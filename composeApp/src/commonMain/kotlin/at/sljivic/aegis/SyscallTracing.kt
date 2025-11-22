@@ -28,7 +28,7 @@ class StreamingBuffer {
     private val sb = StringBuilder()
 
     @Synchronized
-    fun append(line: String) {
+    fun append(line: String?) {
         sb.append(line).append('\n')
     }
 
@@ -42,22 +42,23 @@ class StreamingBuffer {
 }
 
 data class TracingResult(
-        val tracerOut: StreamingBuffer,
-        val tracerErr: StreamingBuffer,
-        val appOut: StreamingBuffer,
-        val appErr: StreamingBuffer,
-        val tracerOutThread: Thread,
-        val tracerErrThread: Thread,
-        val appOutThread: Thread,
-        val appErrThread: Thread,
-        val tracerProc: Process
+    val tracerOut: StreamingBuffer,
+    val tracerErr: StreamingBuffer,
+    val appOut: StreamingBuffer,
+    val appErr: StreamingBuffer,
+    val tracerOutThread: Thread,
+    val tracerErrThread: Thread,
+    val appOutThread: Thread,
+    val appErrThread: Thread,
+    val tracerProc: Process
 )
 
 expect fun traceExecutable(
-        executablePath: String,
-        args: List<String>,
-        timeoutSeconds: Long,
-        sandbox: SandboxingOptions
+    context: Any,
+    executablePath: String,
+    args: List<String>,
+    timeoutSeconds: Long,
+    sandbox: SandboxingOptions
 ): TracingResult
 
 fun getSyscallList(path: String): ArrayList<Syscall> {

@@ -14,8 +14,8 @@ class MainActivity : ComponentActivity() {
             activity = this,
             onFilePicked = { uri ->
                 if (uri.path != null) {
-                    val sandboxConfig = parsePolicyFile("/tmp/HackaTUM/policy.aegis");
-                    traceExecutable(uri.path!!, listOf("."), 60, sandboxConfig).split("\n")
+                    println(uri.path)
+                    getSyscallList(this);
                 }
             }
         )
