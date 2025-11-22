@@ -25,8 +25,17 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <iostream>
 #include <stdio.h>
 #include <unistd.h>
+
+#include <atomic>
+
+std::atomic<bool> sandbox_is_two_step{false};
+std::atomic<bool> update_sandbox{false};
+
+#include <csignal>
+#include <iostream>
 
 /**
  * Sets a file descriptor to non-blocking mode.
@@ -60,7 +69,9 @@ void run_tracer(pid_t child_pid) {
     long syscall_num;
 
     // Wait for the child to stop after PTRACE_TRACEME and before execvp returns
-    if (waitpid(child_pid, &status, 0) == -1) {
+    int waitpid_ret = waitpid(child_pid, &status, 0);
+    if (waitpid_ret == -1) {
+        // fprintf(stderr, "%d\n", errno);
         perror("waitpid");
         return;
     }
@@ -143,11 +154,18 @@ void run_tracer(pid_t child_pid) {
         }
     }
 }
+#include <cstring>
 
 // Main function
 int main(int argc, char* argv[]) {
+    //   install_sigterm_handler();
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s <num_syscalls_to_restrict> [sysnr1 sysnr2 ... ] <executable> [arg1 arg2 ...]\n",
+        fprintf(stderr,
+                "Usage: %s <num_syscalls_to_restrict>"
+                "[sysnr1 sysnr2 ... ]"
+                "[-one-step | -two-step <num_syscalls_to_restrict>"
+                "[sysnr1 sysnr2 ... ]] "
+                "<executable> [arg1 arg2 ...]\n",
                 argv[0]);
         return EXIT_FAILURE;
     }
@@ -158,6 +176,28 @@ int main(int argc, char* argv[]) {
     for (size_t i = 0; i < num_syscalls_to_restrict; ++i) {
         syscalls_to_restrict.push_back(atoi(argv[2 + i]));
     }
+
+    bool stage_2 = (strncmp(argv[2 + num_syscalls_to_restrict], "-two-step", strlen("-two-step")) == 0);
+    fprintf(stderr, "Two step sandbox? %d\n", stage_2);
+
+    std::vector<uint32_t> syscalls_to_restrict_stage_2;
+    uint32_t num_syscalls_to_restrict_stage_2 = 0;
+    if (stage_2) {
+        num_syscalls_to_restrict_stage_2 = atoi(argv[2 + num_syscalls_to_restrict + 1]);
+        for (size_t i = 0; i < num_syscalls_to_restrict_stage_2; ++i) {
+            syscalls_to_restrict.push_back(atoi(argv[2 + num_syscalls_to_restrict + 2 + i]));
+        }
+    }
+
+    fprintf(stderr, "Stage 1: \n");
+    for (auto& syscall : syscalls_to_restrict) {
+        fprintf(stderr, "%d ", syscall);
+    }
+    fprintf(stderr, "\n Stage 2: \n");
+    for (auto& syscall : syscalls_to_restrict_stage_2) {
+        fprintf(stderr, "%d ", syscall);
+    }
+    fprintf(stderr, "executing %s", argv[2 + num_syscalls_to_restrict + num_syscalls_to_restrict_stage_2 + 1]);
 
     pid_t pid = fork();
 
@@ -200,7 +240,8 @@ int main(int argc, char* argv[]) {
         }
 
         sandbox_current_process_seccomp(syscalls_to_restrict);
-        execvp(argv[2 + num_syscalls_to_restrict], argv + 2 + num_syscalls_to_restrict);
+        execvp(argv[2 + num_syscalls_to_restrict + num_syscalls_to_restrict_stage_2 + 1],
+               argv + 2 + num_syscalls_to_restrict + num_syscalls_to_restrict_stage_2 + 1);
 
         // execvp only returns if an error occurred
         perror("execvp");

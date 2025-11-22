@@ -22,8 +22,7 @@ import at.sljivic.aegis.syscallNumToSyscall
 import at.sljivic.aegis.getSyscallList
 import kotlin.concurrent.thread
 
-
-data class SandboxingOptions(val syscall_restrictions: ArrayList<Int>)
+data class SandboxingOptions(val syscall_restrictions: ArrayList<Int>, val syscall_restrictions_stage_2: ArrayList<Int>, val condition: Int)
 
 enum class Action {
     Allow, Deny
@@ -62,7 +61,7 @@ fun parsePolicyFile(path: String): SandboxingOptions {
     if (rules.get(0).syscall_name != "DEFAULT") {
         println("Rule file malformed. No default action")
     }
-    val sandbox = SandboxingOptions(ArrayList<Int>());
+    val sandbox = SandboxingOptions(ArrayList<Int>(), ArrayList<Int>(),0)
     if (rules.get(0).action == Action.Allow) {
         // the rest is all denies - TODO check explciitly
         for (rule in rules) {
