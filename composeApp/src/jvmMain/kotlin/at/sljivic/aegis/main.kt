@@ -60,7 +60,7 @@ fun main() = application {
 
         val executable = "/tmp/HackaTUM/tracer" // For Unix-like systems (Linux/macOS)
         // val executable = "cmd.exe" // Use "cmd.exe" for Windows
-        val arguments = listOf("")
+        val arguments = listOf("/bin/ls", "")
 
         println("Executing command: $executable ${arguments.joinToString(" ")}")
 
