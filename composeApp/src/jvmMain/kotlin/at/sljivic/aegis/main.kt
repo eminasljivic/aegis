@@ -555,7 +555,8 @@ actual fun traceExecutable(
 }
 
 fun main() = application {
-        val filePicker = JvmFilePicker { path -> println("Selected file: $path") }
+        var tracee_path = ""
+        val filePicker = JvmFilePicker { path -> tracee_path = path }
 
         Window(
                 onCloseRequest = ::exitApplication,

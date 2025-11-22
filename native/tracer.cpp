@@ -1,5 +1,6 @@
 #include "sandboxer.h"
 #include <cstdint>
+#include <cstring>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -139,7 +140,7 @@ void run_tracer(pid_t child_pid) {
 
             syscall_num = regs.SYSCALL_REG_FIELD;
             printf("%ld\n", syscall_num);
-            fprintf(stderr, "%ld\n", syscall_num);
+        
             if (in_stage_2 && syscalls_to_restrict_stage_2.find(syscall_num) != syscalls_to_restrict_stage_2.end()) {
                 // KILL ITTTTTTTTTTTTTTTTTTTTTTTTTTTTT
                 if (kill(child_pid, SIGKILL) < 0) {
@@ -163,7 +164,6 @@ void run_tracer(pid_t child_pid) {
         }
     }
 }
-#include <cstring>
 
 // Main function
 int main(int argc, char* argv[]) {

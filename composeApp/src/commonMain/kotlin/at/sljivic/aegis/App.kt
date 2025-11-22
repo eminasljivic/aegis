@@ -28,9 +28,16 @@ fun App(filePicker: FilePicker) {
                     ArrayList<OperationType>(
                             listOf(OperationType.Network, OperationType.ProcessManagement)
                     )
-            createPolicy(file_only_policy, "/tmp/HackaTUM/gen_policy.aegis")
-            getSyscallList()
+            // createPolicy(file_only_policy, "/tmp/HackaTUM/gen_policy.aegis")
+
+            var path = "/bin/ls"
             Button(onClick = { filePicker.pickFile() }) { Text("Select File") }
+            Button(
+                    onClick = {
+                        println("Path to exe: $path")
+                        getSyscallList(path)
+                    },
+            ) { Text("Run!") }
         }
     }
 }
