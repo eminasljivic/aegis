@@ -130,17 +130,16 @@ fun createPolicy(restrictions: ArrayList<OperationType>, path: String) {
 
 
 fun getSyscallList(): ArrayList<Syscall> {
-
-    val sandbox_config = parsePolicyFile("/tmp/HackaTUM/policy.aegis");
+ //   val sandbox_config = parsePolicyFile("/tmp/HackaTUM/policy.aegis");
+    val sandbox_config = parsePolicyFile("/tmp/HackaTUM/gen_policy.aegis");
     val nums =
-            traceExecutable("id", listOf("."), 60, sandbox_config)
+            traceExecutable("/home/dominik/Workspace/HackaTUM/aegis/example_apps/only_simple_file_op", listOf(), 60, sandbox_config)
                     .split("\n")
     var syscalls_in_order = ArrayList<Syscall>()
     for (num in nums) {
-        //   println("to int: $num");
+        if(num.isBlank()) continue
         val intNum = num.toInt()
         val syscall = syscallNumToSyscall(intNum)
-        // println("Syscall was: $syscall")
         syscalls_in_order.add(syscall)
     }
     return syscalls_in_order
@@ -161,10 +160,10 @@ fun App() {
             Button(onClick = { showContent = !showContent }) { Text("Click me!") }
             AnimatedVisibility(showContent) {
                 val greeting = remember { Greeting().greet() }
-                println(getSyscallList())
                 val file_only_policy = ArrayList<OperationType>(listOf(OperationType.Network, OperationType.ProcessManagement));
-
                 createPolicy(file_only_policy, "/tmp/HackaTUM/gen_policy.aegis")
+                println(getSyscallList())
+
                 Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
