@@ -36,5 +36,5 @@ void sandbox_current_process_seccomp(std::vector<uint32_t>& syscalls_to_restrict
         seccomp_release(ctx);
         exit(1);
     }
-    fprintf(stderr, "seemingly seccomp worked\n");
+   // fprintf(stderr, "seemingly seccomp worked\n");
 }
