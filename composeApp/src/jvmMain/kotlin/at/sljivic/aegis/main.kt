@@ -18,7 +18,7 @@ fun executeExecutable(
         timeoutSeconds: Long = 60
 ): Pair<Int, String> {
     // 1. Combine the executable path and its arguments into a single list of command parts
-    val commandParts = mutableListOf(executablePath).apply { addAll(args) }
+    val commandParts = mutableListOf(executablePath, "0").apply { addAll(args) }
 
     // 2. Create and configure the ProcessBuilder
     val process =

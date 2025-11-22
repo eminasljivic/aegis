@@ -1,3 +1,5 @@
+#include "sandboxer.h"
+#include <cstdint>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -6,6 +8,7 @@
 #include <sys/user.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <vector>
 
 // On x86-64, the syscall number is in the orig_rax register
 #ifndef __x86_64__
@@ -90,10 +93,6 @@ void run_tracer(pid_t child_pid) {
         }
     }
 }
-
-#include "sandboxer.h"
-#include <cstdint>
-#include <vector>
 
 // Main function
 int main(int argc, char* argv[]) {
