@@ -1,3 +1,5 @@
+#include "linux_compat.h"
+
 #include "sandboxer.h"
 #include <cstdint>
 #include <errno.h>

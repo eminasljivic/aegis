@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <errno.h>
 #include <iostream>
-#include <linux/audit.h>
+#include "linux_compat.h"
 #include <linux/filter.h>
 #include <linux/seccomp.h>
 #include "sandboxer.h"
