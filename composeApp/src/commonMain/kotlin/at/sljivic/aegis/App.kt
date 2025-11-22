@@ -1,5 +1,7 @@
 package at.sljivic.aegis
 
+import aegis.composeapp.generated.resources.Res
+import aegis.composeapp.generated.resources.compose_multiplatform
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,8 +18,16 @@ import androidx.compose.ui.Modifier
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
-import aegis.composeapp.generated.resources.Res
-import aegis.composeapp.generated.resources.compose_multiplatform
+enum class OperationType {
+    File,
+    Network,
+    ProcessManagement,
+    Unclassified
+}
+
+data class Syscall(val name: String, val type: OperationType)
+
+expect fun getSyscallList(): ArrayList<Syscall>
 
 @Composable
 @Preview
@@ -25,20 +35,19 @@ fun App() {
     MaterialTheme {
         var showContent by remember { mutableStateOf(false) }
         Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                modifier =
+                        Modifier.background(MaterialTheme.colorScheme.primaryContainer)
+                                .safeContentPadding()
+                                .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
+            Button(onClick = { showContent = !showContent }) { Text("Click me!") }
             AnimatedVisibility(showContent) {
                 val greeting = remember { Greeting().greet() }
+                println(getSyscallList())
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Image(painterResource(Res.drawable.compose_multiplatform), null)
                     Text("Compose: $greeting")
