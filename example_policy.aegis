@@ -1,0 +1,6 @@
+ALLOW DEFAULT
+DENY getuid
+DENY prctl
+DENY read
+DENY write
+DENY brk

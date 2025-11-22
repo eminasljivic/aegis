@@ -437,8 +437,23 @@ val x64_linux_syscall_num_to_name =
                 Syscall("open_tree_attr", OperationType.Unclassified)
         )
 
+actual fun syscallNameToNum(name: String): Int {
+        var i = 0
+        while (i != x64_linux_syscall_num_to_name.size) {
+                if (x64_linux_syscall_num_to_name.get(i).name == name) {
+                        return i
+                }
+                i += 1
+        }
+        return -1
+}
+
 actual fun syscallNumToSyscall(num: Int): Syscall {
         return x64_linux_syscall_num_to_name.get(num)
+}
+
+actual fun getNumSyscalls(): Int {
+        return x64_linux_syscall_num_to_name.size
 }
 
 actual fun traceExecutable(
@@ -447,9 +462,7 @@ actual fun traceExecutable(
         timeoutSeconds: Long,
         sandbox: SandboxingOptions
 ): String {
-
-        val executable = "/tmp/HackaTUM/tracer" // For Unix-like systems (Linux/macOS)
-        // val executable = "cmd.exe" // Use "cmd.exe" for Windows
+        val executable = "/tmp/HackaTUM/tracer"
 
         val arguments = ArrayList<String>()
         println(sandbox.syscall_restrictions.size.toString())
@@ -464,11 +477,11 @@ actual fun traceExecutable(
 
         val (code, output) = executeExecutable(executable, arguments)
 
-        println("\n--- Execution Result ---")
-        println("Exit Code: $code")
-        println("Output:")
-        println(output)
-        println("------------------------")
+       // println("\n--- Execution Result ---")
+        //println("Exit Code: $code")
+        //println("Output:")
+        //println(output)
+        //println("------------------------")
 
         return output
 }

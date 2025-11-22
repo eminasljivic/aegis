@@ -56,7 +56,7 @@ void run_tracer(pid_t child_pid) {
         // Check for child exit
         if (WIFEXITED(status)) {
             fprintf(stderr, "Child exited with status %d\n", WEXITSTATUS(status));
-            break;
+            exit(status);
         }
 
         // Syscall stop is signaled by (WSTOPSIG(status) & 0x80)

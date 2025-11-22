@@ -15,8 +15,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import java.io.BufferedReader
+import java.io.File
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import at.sljivic.aegis.PolicyRule
 
 data class SandboxingOptions(val syscall_restrictions: ArrayList<Int>)
 
@@ -30,6 +33,8 @@ enum class OperationType {
 data class Syscall(val name: String, val type: OperationType)
 
 expect fun syscallNumToSyscall(num: Int): Syscall
+expect fun syscallNameToNum(name: String): Int
+expect fun getNumSyscalls(): Int
 
 expect fun traceExecutable(
         executablePath: String,
@@ -38,9 +43,83 @@ expect fun traceExecutable(
         sandbox: SandboxingOptions
 ): String
 
+
+enum class Action {
+    Allow, Deny
+}
+
+data class PolicyRule(val action: Action, val syscall_name: String) 
+
+fun parsePolicyFile(path: String): SandboxingOptions {
+    val bufferedReader: BufferedReader = File(path).bufferedReader()
+    val policyContent = bufferedReader.use { it.readText() }
+    val policyLines = policyContent.split("\n");
+
+    val rules = ArrayList<PolicyRule>();
+    println("Rule file:");
+    println(policyContent);
+    println("===========\n")
+
+    for (rule in policyLines) {
+        if(rule == "" || rule.isBlank()) {
+            continue
+        }
+        println("Looking at rule");
+        println(rule);
+        
+        val parts = rule.split(" ")
+        if(parts.size != 2) {
+            println("Rule file malformed. Part size is not 2")
+        }
+        if(parts.get(0) == "ALLOW")
+            rules.add(PolicyRule(Action.Allow, parts.get(1)));
+        else if(parts.get(0) == "DENY")
+            rules.add(PolicyRule(Action.Deny, parts.get(1)));
+        else 
+           println("Rule file malformed. Action neither allow nor deny")
+    }
+    if(rules.get(0).syscall_name != "DEFAULT") {
+        println("Rule file malformed. No default action")
+    }
+   val sandbox = SandboxingOptions(ArrayList<Int>());
+    if(rules.get(0).action == Action.Allow) {
+        // the rest is all denies - TODO check explciitly
+        for(rule in rules) {
+            if(rule.syscall_name != "DEFAULT") // todo: how to skip in kotlin
+            {
+                sandbox.syscall_restrictions.add(syscallNameToNum(rule.syscall_name));
+            }
+        }
+    }
+    else {
+        // we need to deny all not explicitly mentioned
+        // assume the numbers are sorted for now
+        var curr_num = 0
+        for(rule in rules) {
+            if(rule.syscall_name != "DEFAULT") // todo: how to skip in kotlin
+            {
+                val policy_num = syscallNameToNum(rule.syscall_name)
+                while(curr_num != policy_num && curr_num < getNumSyscalls()) {
+                    sandbox.syscall_restrictions.add(curr_num);
+                    curr_num++;
+                }
+                if(curr_num == policy_num) {
+                    curr_num++;
+                }
+            }
+        }
+    }
+ 
+    
+    return sandbox;
+}
+
 fun getSyscallList(): ArrayList<Syscall> {
+
+    val sandbox_config = parsePolicyFile("/tmp/HackaTUM/policy.aegis");
     val nums =
-            traceExecutable("ls", listOf("."), 60, SandboxingOptions(ArrayList<Int>(102))).split("\n")
+            traceExecutable("id", listOf("."), 60, sandbox_config)
+                    .split("\n")
     var syscalls_in_order = ArrayList<Syscall>()
     for (num in nums) {
         //   println("to int: $num");
@@ -78,4 +157,5 @@ fun App() {
             }
         }
     }
+
 }
