@@ -1,28 +1,9 @@
-package at.sljivic.aegis
+package at.sljivic.aegis.logic
 
 
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import com.example.compose.AppTheme
 import java.io.BufferedReader
 import java.io.File
-import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
-import at.sljivic.aegis.PolicyRule
-import at.sljivic.aegis.syscallNumToSyscall
-import at.sljivic.aegis.getSyscallList
-import at.sljivic.aegis.Action
-import at.sljivic.aegis.syscallNameToNum
-import kotlin.concurrent.thread
 
 data class SandboxingOptions(val syscall_restrictions: ArrayList<Int>, val syscall_restrictions_stage_2: ArrayList<Int>, var condition: Int)
 
