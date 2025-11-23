@@ -46,7 +46,7 @@ fun MainScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 FilePickerButton(
-                    text = "Select a executable",
+                    text = "Select an Executable",
                     filePicker = provideFilePicker(),
                 ) { fileName ->
                     selectedFile = fileName

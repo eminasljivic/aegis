@@ -18,7 +18,7 @@ class SettingsViewModel(
     private val _args = MutableStateFlow(repo.getArgs())
     val args: StateFlow<String> = _args
 
-    private val _policyFile = MutableStateFlow(repo.getArgs())
+    private val _policyFile = MutableStateFlow(repo.getPolicyFile())
     val policyFile: StateFlow<String> = _policyFile
 
     fun toggleDarkMode() {

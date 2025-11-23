@@ -14,8 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import at.sljivic.aegis.core.theme.AppTheme
-import at.sljivic.aegis.filePicker.FilePickerButton
-import at.sljivic.aegis.filePicker.provideFilePicker
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
@@ -67,24 +65,11 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
                 label = { Text("Arguments") }
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-
-                TextField(
-                    value = policy,
-                    readOnly = true,
-                    label = { Text("Selected policy") },
-                    onValueChange = {}
-                )
-
-                FilePickerButton(
-                    "Select",
-                    provideFilePicker()
-                ) { filePath -> viewModel.setPolicyFile(filePath) }
-
-            }
+            TextField(
+                value = policy,
+                onValueChange = { viewModel.setPolicyFile(it) },
+                label = { Text("Policy path") },
+            )
         }
     }
 }
