@@ -55,6 +55,12 @@ data class TracingResult(
 
 expect fun getTracerPath(): String
 
+expect fun executeExecutable(
+        executablePath: String,
+        args: List<String> = emptyList(),
+        timeoutSeconds: Long = 60
+): TracingResult 
+
 fun traceExecutable(
         executablePath: String,
         args: List<String>,
