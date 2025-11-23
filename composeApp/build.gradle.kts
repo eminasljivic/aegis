@@ -42,6 +42,7 @@ kotlin {
             implementation(libs.androidx.datastore)
             implementation(libs.androidx.datastore.preferences)
             implementation(libs.kotlinx.serialization.json)
+// Add this line
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,9 +49,6 @@ fun LogScreen(path: String, args: String) {
                 is TraceEvent.SyscallEvent -> {
                     syscallEvents.add(LogEntry(LogType.SYSCALL, "${event.name.name} of type ${event.name.type}"))
                 }
-                is TraceEvent.TracerErr -> {
-                  //  syscallEvents.add(LogEntry(LogType.TRACER_ERR, event.msg))
-                }
                 is TraceEvent.AppOut -> {
                     app.add(LogEntry(LogType.APP_OUT, event.msg))
                 }
@@ -61,13 +58,13 @@ fun LogScreen(path: String, args: String) {
                 TraceEvent.Finished -> {
                     syscallEvents.add(LogEntry(LogType.FINISHED, "---- FINISHED ----"))
                 }
+                else -> {}
             }
         }
     }
 
     Column(modifier = Modifier
-        .fillMaxSize()
-        .background(Color(0xFF1E1E1E)) // terminal background
+        .background(MaterialTheme.colorScheme.background) // use colorScheme, not colors
         .padding(8.dp)
     ) {
         // App Output / Errors
@@ -76,7 +73,7 @@ fun LogScreen(path: String, args: String) {
                 .weight(1f)
                 .fillMaxWidth()
                 .padding(4.dp)
-                .background(Color(0xFF2D2D2D), shape = RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.background, shape = RoundedCornerShape(8.dp))
                 .padding(8.dp)
         ) {
             Text(
@@ -92,7 +89,7 @@ fun LogScreen(path: String, args: String) {
                             .fillMaxWidth()
                             .padding(vertical = 2.dp),
                         fontFamily = FontFamily.Monospace,
-                        color = if (line.type == LogType.APP_ERR) Color.Red else Color.White
+                        color = if (line.type == LogType.APP_ERR) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onBackground
                     )
                 }
             }
@@ -106,7 +103,7 @@ fun LogScreen(path: String, args: String) {
                 .weight(1f)
                 .fillMaxWidth()
                 .padding(4.dp)
-                .background(Color(0xFF2D2D2D), shape = RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.background, shape = RoundedCornerShape(8.dp))
                 .padding(8.dp)
         ) {
             Text(
@@ -122,7 +119,7 @@ fun LogScreen(path: String, args: String) {
                             .fillMaxWidth()
                             .padding(vertical = 2.dp),
                         fontFamily = FontFamily.Monospace,
-                        color = Color(0xFFFFAA00)
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 }
             }

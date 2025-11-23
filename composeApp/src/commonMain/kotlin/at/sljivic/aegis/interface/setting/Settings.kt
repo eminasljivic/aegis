@@ -1,22 +1,19 @@
 package at.sljivic.aegis.`interface`.setting
 
 import SettingsViewModel
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.TextField
-import com.example.compose.AppTheme
+import at.sljivic.aegis.core.theme.AppTheme
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
@@ -26,20 +23,27 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
 
     AppTheme(darkTheme = darkMode) {
         Column(
-                modifier = Modifier.fillMaxSize().padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background) // <-- Set the background
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Settings")
                 if (onBack != null) {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
                     }
                 }
+                Text("Settings", color = MaterialTheme.colorScheme.onBackground)
             }
 
             SettingsToggle(
@@ -70,7 +74,7 @@ fun SettingsToggle(title: String, value: Boolean, onToggle: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title)
+        Text(title, color = MaterialTheme.colorScheme.onBackground)
         Switch(checked = value, onCheckedChange = { onToggle() })
     }
 }

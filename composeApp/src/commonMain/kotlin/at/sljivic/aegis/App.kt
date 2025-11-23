@@ -7,7 +7,6 @@ import at.sljivic.aegis.`interface`.MainScreen
 import at.sljivic.aegis.`interface`.setting.SettingsScreen
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
-
 enum class Screen {
     MAIN,
     SETTINGS
@@ -17,6 +16,7 @@ enum class Screen {
 @Preview
 fun App(settingsViewModel: SettingsViewModel) {
     var currentScreen by remember { mutableStateOf(Screen.MAIN) }
+
 
     when (currentScreen) {
         Screen.MAIN -> MainScreen(
