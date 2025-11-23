@@ -75,12 +75,22 @@ actual fun executeExecutable(
                             "sh",
                             "-c",
                             """
-        while true; do
-            if [ ! -d /proc/${temp} ]; then
-                break
-            fi
-            sleep 1
-        done
+       timeout=2   # seconds
+elapsed=0
+
+while true; do
+    if [ ! -d "/proc/${'$'}temp" ]; then
+        break
+    fi
+
+    if [ "${'$'}elapsed" -ge "${'$'}timeout" ]; then
+        kill -9 "${'$'}temp" 2>/dev/null
+        break
+    fi
+
+    sleep 1
+    elapsed=$((elapsed + 1))
+done
     """.trimIndent()
                     )
                     .start()

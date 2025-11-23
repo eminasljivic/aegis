@@ -110,7 +110,9 @@ fun getSyscallList(path: String): ArrayList<Syscall> {
     val traceResult = traceExecutable(path, listOf(), 60, sandbox_config)
     // we trust it will die at some point
     var last_time = false
+    var times = 0
     while (true) {
+        times +=1
         val outChunk = traceResult.tracerOut.drain()
         if (outChunk.isNotEmpty() && outChunk.isNotBlank()) {
             val outs = outChunk.split("\n")
@@ -138,8 +140,8 @@ fun getSyscallList(path: String): ArrayList<Syscall> {
         }
 
         if (last_time) break
-
         if (!traceResult.tracerProc.isAlive()) {
+            println("in tracer proc not alive")
             last_time = true
             traceResult.tracerOutThread.join()
             traceResult.tracerErrThread.join()
@@ -147,6 +149,9 @@ fun getSyscallList(path: String): ArrayList<Syscall> {
             traceResult.appOutThread.join()
         }
         Thread.sleep(100)
+        if(times > 20) {
+            traceResult.tracerProc.destroyForcibly()
+        }
     }
 
     return syscalls_in_order

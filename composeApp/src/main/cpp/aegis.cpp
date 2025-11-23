@@ -42,6 +42,7 @@
 
 // yes globals are bad, no we do not care right now :c
 std::unordered_set<uint32_t> syscalls_to_restrict_stage_2{};
+std::unordered_set<uint32_t> syscalls_to_restrict{};
 uint32_t condition = UINT32_MAX;
 bool in_stage_2 = false;
 bool entering = true;
@@ -123,7 +124,7 @@ extern "C"
                     printf("%ld\n", SYSCALL_NUM(regs));
                     uint32_t syscall_num = SYSCALL_NUM(regs);
 
-                    if (in_stage_2 && syscalls_to_restrict_stage_2.find(syscall_num) != syscalls_to_restrict_stage_2.end())
+                    if (syscalls_to_restrict.find(syscall_num) != syscalls_to_restrict.end() || (in_stage_2 && syscalls_to_restrict_stage_2.find(syscall_num) != syscalls_to_restrict_stage_2.end()))
                     {
                         // KILL ITTTTTTTTTTTTTTTTTTTTTTTTTTTTT
                         if (kill(child_pid, SIGKILL) < 0)
@@ -206,18 +207,53 @@ extern "C"
 
             if (argc < 2)
             {
-                LOGI("Usage: %s <num_syscalls_to_restrict> [sysnr1 sysnr2 ... ] <executable> [arg1 arg2 ...]\n",
+                LOGI("Usage: %s <num_syscalls_to_restrict>"
+                     "[sysnr1 sysnr2 ... ]"
+                     "[-one-step | -two-step <num_syscalls_to_restrict>"
+                     "[sysnr1 sysnr2 ... ]] "
+                     "<executable> [arg1 arg2 ...]\n",
                      argv[0]);
                 return EXIT_FAILURE;
             }
 
             uint32_t num_syscalls_to_restrict = atoi(argv[1]);
-            std::vector<uint32_t> syscalls_to_restrict;
 
             for (size_t i = 0; i < num_syscalls_to_restrict; ++i)
             {
-                syscalls_to_restrict.push_back(atoi(argv[2 + i]));
+                syscalls_to_restrict.insert(atoi(argv[2 + i]));
             }
+
+            bool stage_2 = (strncmp(argv[2 + num_syscalls_to_restrict], "-two-step", strlen("-two-step")) == 0);
+            LOGI("Two step sandbox? %d\n", stage_2);
+
+            uint32_t num_syscalls_to_restrict_stage_2 = 0;
+
+            if (stage_2)
+            {
+                LOGI("two stage sandboxing active\n");
+                condition = atoi(argv[2 + num_syscalls_to_restrict + 1]);
+                LOGI("condition: %d\n", condition);
+                num_syscalls_to_restrict_stage_2 = atoi(argv[2 + num_syscalls_to_restrict + 2]);
+
+                LOGI("supposedly %d args for stage 2 sandbox\n", num_syscalls_to_restrict_stage_2);
+                for (size_t i = 0; i < num_syscalls_to_restrict_stage_2; ++i)
+                {
+                    syscalls_to_restrict_stage_2.insert(atoi(argv[2 + num_syscalls_to_restrict + 3 + i]));
+                }
+            }
+
+            LOGI("Stage 1: \n");
+            for (auto &syscall : syscalls_to_restrict)
+            {
+                LOGI("%d ", syscall);
+            }
+            LOGI("\n Stage 2: \n");
+            for (auto &syscall : syscalls_to_restrict_stage_2)
+            {
+                LOGI("%d ", syscall);
+            }
+            LOGI("\n\nexecuting %s\n",
+                 argv[2 + num_syscalls_to_restrict + num_syscalls_to_restrict_stage_2 + ((stage_2) ? 3 : 1)]);
 
             pid_t pid = fork();
 
