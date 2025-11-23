@@ -13,43 +13,54 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import at.sljivic.aegis.filePicker.FilePickerButton
 import at.sljivic.aegis.filePicker.provideFilePicker
+import at.sljivic.aegis.logic.Syscall
 import at.sljivic.aegis.logic.getSyscallList
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(
-    onSettingsClick: () -> Unit
-) {
+fun MainScreen(onSettingsClick: () -> Unit) {
+    var syscalls by remember { mutableStateOf<List<Syscall>>(emptyList()) }
+
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Main Page") },
-                actions = {
-                    IconButton(onClick = onSettingsClick) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings"
-                        )
-                    }
-                }
-            )
-        }
+            topBar = {
+                TopAppBar(
+                        title = { Text("Main Page") },
+                        actions = {
+                            IconButton(onClick = onSettingsClick) {
+                                Icon(
+                                        imageVector = Icons.Default.Settings,
+                                        contentDescription = "Settings"
+                                )
+                            }
+                        }
+                )
+            }
     ) { padding ->
-        // Main content
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.fillMaxSize().padding(padding),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            FilePickerButton(filePicker = provideFilePicker(), { fileName ->
-                getSyscallList(fileName);
-            })
+            FilePickerButton(
+                    filePicker = provideFilePicker(),
+            ) { fileName ->
+                syscalls = getSyscallList(fileName) // ← update state
+            }
+
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(syscalls) { sc -> Text(sc.toString()) }
+            }
         }
     }
 }
