@@ -12,9 +12,9 @@ import kotlin.sequences.forEach
  * @return A Pair containing the exit code and the captured output (or error).
  */
 actual fun executeExecutable(
-        executablePath: String,
-        args: List<String> = emptyList(),
-        timeoutSeconds: Long = 60
+    executablePath: String,
+    args: List<String>,
+    timeoutSeconds: Long
 ): TracingResult {
     // TODO: Files have to be created before
     val fifoOut = File("/data/data/at.sljivic.aegis/files/program_out_fifo")

@@ -103,8 +103,9 @@ fun traceExecutable(
 }
 
 fun getSyscallList(path: String): ArrayList<Syscall> {
-    val sandbox_config = parsePolicyFile("/tmp/HackaTUM/socket_when.aegis")
+    // val sandbox_config = parsePolicyFile("/tmp/HackaTUM/socket_when.aegis")
     // val sandbox_config = parsePolicyFile("/tmp/HackaTUM/gen_policy.aegis")
+    val sandbox_config = SandboxingOptions(arrayListOf(), arrayListOf(), 1)
     var syscalls_in_order = ArrayList<Syscall>()
     val traceResult = traceExecutable(path, listOf(), 60, sandbox_config)
     // we trust it will die at some point
@@ -149,5 +150,4 @@ fun getSyscallList(path: String): ArrayList<Syscall> {
     }
 
     return syscalls_in_order
-}
 }
