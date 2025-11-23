@@ -4,6 +4,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import java.io.File
 import kotlin.concurrent.thread
+import at.sljivic.aegis.getTracerPath
 
 /**
  * Executes an external command (executable) using ProcessBuilder.
@@ -513,46 +514,11 @@ actual fun getSyscallsOfType(type: OperationType): ArrayList<String> {
         return fittingSyscalls
 }
 
-actual fun traceExecutable(
-        executablePath: String,
-        args: List<String>,
-        timeoutSeconds: Long,
-        sandbox: SandboxingOptions
-): TracingResult {
-        val executable = "/tmp/HackaTUM/tracer"
 
-        val arguments = ArrayList<String>()
-        println(sandbox.syscall_restrictions.size.toString())
-        arguments.add(sandbox.syscall_restrictions.size.toString())
-        for (sys in sandbox.syscall_restrictions) {
-                arguments.add(sys.toString())
-        }
-        if (sandbox.syscall_restrictions_stage_2.isNotEmpty()) {
-                arguments.add("-two-step")
-                arguments.add(sandbox.condition.toString())
-                arguments.add(sandbox.syscall_restrictions_stage_2.size.toString())
-                for (sys in sandbox.syscall_restrictions_stage_2) {
-                        arguments.add(sys.toString())
-                }
-        } else {
-                arguments.add("-one-step")
-        }
-
-        arguments.add(executablePath)
-        arguments.addAll(args)
-
-        println("Executing command: $executable ${arguments.joinToString(" ")}")
-
-        val tracingRes = executeExecutable(executable, arguments)
-
-        // println("\n--- Execution Result ---")
-        // println("Exit Code: $code")
-        // println("Output:")
-        // println(output)
-        // println("------------------------")
-
-        return tracingRes
+actual fun getTracerPath(): String{
+        return "/tmp/HackaTUM/tracer"
 }
+
 
 fun main() = application {
         var tracee_path = ""
