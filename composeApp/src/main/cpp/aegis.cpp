@@ -136,7 +136,7 @@ extern "C"
 
                 if (entering)
                 {
-                    printf("syscall = %ld\n", SYSCALL_NUM(regs));
+                    printf("%ld\n", SYSCALL_NUM(regs));
                 }
                 else
                 {
