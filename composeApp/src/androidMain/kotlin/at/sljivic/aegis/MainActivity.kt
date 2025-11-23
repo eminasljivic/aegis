@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
             onFilePicked = { uri ->
                 if (uri.path != null) {
                     println(uri.path)
-                    getSyscallList(this);
+                    getSyscallList(uri.path!!);
                 }
             }
         )

@@ -54,7 +54,6 @@ data class TracingResult(
 )
 
 expect fun traceExecutable(
-    context: Any,
     executablePath: String,
     args: List<String>,
     timeoutSeconds: Long,
