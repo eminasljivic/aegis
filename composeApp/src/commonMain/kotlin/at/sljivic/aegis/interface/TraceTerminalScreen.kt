@@ -50,7 +50,7 @@ fun LogScreen(path: String) {
                     syscallEvents.add(LogEntry(LogType.SYSCALL, "${event.name.name} of type ${event.name.type}"))
                 }
                 is TraceEvent.TracerErr -> {
-                    syscallEvents.add(LogEntry(LogType.TRACER_ERR, event.msg))
+                  //  syscallEvents.add(LogEntry(LogType.TRACER_ERR, event.msg))
                 }
                 is TraceEvent.AppOut -> {
                     app.add(LogEntry(LogType.APP_OUT, event.msg))
