@@ -22,7 +22,6 @@
 #define SYSCALL_RET(regs) ((regs).regs[0])
 #endif
 
-
 #ifndef NT_PRSTATUS
 #define NT_PRSTATUS 1
 #endif
@@ -34,30 +33,33 @@
 #include <jni.h>
 
 #include <android/log.h>
+#include <unordered_set>
+#include <cstdint>
 
 #define LOG_TAG "AegisNative"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
+// yes globals are bad, no we do not care right now :c
+std::unordered_set<uint32_t> syscalls_to_restrict_stage_2{};
+uint32_t condition = UINT32_MAX;
+bool in_stage_2 = false;
 bool entering = true;
 
 extern "C"
 {
-    // Function to handle the tracing logic
     void run_tracer(pid_t child_pid)
     {
         LOGI("starting to trace...\n");
         int status;
         long syscall_num;
 
-        // Wait for the child to stop after PTRACE_TRACEME and before execvp returns
         if (waitpid(child_pid, &status, 0) == -1)
         {
             LOGI("waitpid");
             return;
         }
 
-        // Set PTRACE_O_TRACESYSGOOD option to distinguish syscall stops from other stops
         if (ptrace(PTRACE_SETOPTIONS, child_pid, 0, PTRACE_O_TRACESYSGOOD) == -1)
         {
             LOGI("ptrace SETOPTIONS");
@@ -68,27 +70,22 @@ extern "C"
         {
             ARCH_REGS_TYPE regs;
 
-            // 1. Continue the child and stop at the next syscall entry or exit
             if (ptrace(PTRACE_SYSCALL, child_pid, 0, 0) == -1)
             {
-                // Check if the error is due to the process having exited
                 if (errno == ESRCH)
                     break;
                 LOGI("ptrace SYSCALL (continue)");
                 break;
             }
 
-            // 2. Wait for the stop (either syscall entry or exit)
             if (waitpid(child_pid, &status, 0) == -1)
             {
-                // Check if the error is due to the process having exited
                 if (errno == ECHILD || errno == ESRCH)
                     break;
                 LOGI("waitpid");
                 break;
             }
 
-            // Check for child exit
             if (WIFEXITED(status))
             {
                 LOGI("Child exited with status %d\n", WEXITSTATUS(status));
@@ -107,11 +104,8 @@ extern "C"
                 close(output_file);
                 exit(0);
             }
-            // Syscall stop is signaled by (WSTOPSIG(status) & 0x80)
-            // or by PTRACE_O_TRACESYSGOOD resulting in SIGTRAP | 0x80
             if (WIFSTOPPED(status) && (WSTOPSIG(status) == (SIGTRAP | 0x80)))
             {
-                // 3. Get the register values
                 struct iovec iov;
                 iov.iov_base = &regs;
                 iov.iov_len = sizeof(regs);
@@ -124,30 +118,33 @@ extern "C"
                     break;
                 }
 
-                // On syscall entry (before it executes), the number is in orig_rax
-                // On syscall exit (after it executes), the return value is in rax
-                // Since we only want to report the number *once*, we check for a specific state.
-
-                // For simplicity and only reporting the number, we report at *entry*
-                // An even simpler approach is just to print at every stop and let the user see duplicates
-
-                // For this simple version, we'll print at *every* stop (entry and exit)
-                // and let the user see the duplicates which are expected with PTRACE_SYSCALL.
-
                 if (entering)
                 {
                     printf("%ld\n", SYSCALL_NUM(regs));
-                }
-                else
-                {
-                //    printf("ret = %ld\n", SYSCALL_RET(regs));
+                    uint32_t syscall_num = SYSCALL_NUM(regs);
+
+                    if (in_stage_2 && syscalls_to_restrict_stage_2.find(syscall_num) != syscalls_to_restrict_stage_2.end())
+                    {
+                        // KILL ITTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+                        if (kill(child_pid, SIGKILL) < 0)
+                        {
+                            // fprintf(stderr, "killing did not work\n");
+                        }
+
+                        //  fprintf(stderr, "Killed my child hehe :>\n");
+                    }
+                    if (condition != UINT32_MAX && syscall_num == condition)
+                    {
+                        // fprintf(stderr, "entering stage 2\n");
+                        in_stage_2 = true;
+                        condition = UINT32_MAX;
+                    }
                 }
 
                 entering = !entering;
             }
             else
             {
-                // If it stopped for another reason (e.g., signal delivery), continue it
                 if (ptrace(PTRACE_CONT, child_pid, 0, WSTOPSIG(status)) == -1)
                 {
                     LOGI("ptrace CONT");
