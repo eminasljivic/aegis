@@ -13,10 +13,10 @@ import at.sljivic.aegis.getTracerPath
  * @param timeoutSeconds The maximum time to wait for the process to finish.
  * @return A Pair containing the exit code and the captured output (or error).
  */
-fun executeExecutable(
+actual fun executeExecutable(
         executablePath: String,
-        args: List<String> = emptyList(),
-        timeoutSeconds: Long = 60
+        args: List<String>,
+        timeoutSeconds: Long
 ): TracingResult {
         // 1. Combine the executable path and its arguments into a single list of command parts
         val commandParts = mutableListOf(executablePath).apply { addAll(args) }
