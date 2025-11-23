@@ -1,10 +1,10 @@
+#include "sandboxer.h"
 #include <cstdlib>
 #include <errno.h>
 #include <iostream>
 #include "linux_compat.h"
 #include <linux/filter.h>
 #include <linux/seccomp.h>
-#include "sandboxer.h"
 #include <seccomp.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -36,4 +36,5 @@ void sandbox_current_process_seccomp(std::vector<uint32_t>& syscalls_to_restrict
         seccomp_release(ctx);
         exit(1);
     }
+   // fprintf(stderr, "seemingly seccomp worked\n");
 }
