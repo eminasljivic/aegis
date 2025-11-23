@@ -14,17 +14,19 @@ int main(int argc, char const *argv[]){
     int sleeptime = 1;
 
     for(int j = 0; j < 5; j++) {
-        printf("hehe");
-        int randomNum = rand() % 3;
+        int randomNum = rand() % 4;
 
         switch (randomNum) {
-            case 0: {
+            case 1: {
                 FILE* f1 = fopen("file.txt", "r");
                 if(!f1) {
+                    printf("hehe\n");
+
                     break;
                 }
 
                 sleep(sleeptime);
+                printf("hehe\n");
                 const char* string = "Hallo";
                 size_t size = strlen(string);
 
@@ -35,32 +37,39 @@ int main(int argc, char const *argv[]){
 
                 fclose(f1);
                 sleep(sleeptime);
+                printf("hehe\n");
                 break;
             }
-            case 1: {
+            case 2: {
                 FILE* f2 = fopen("file.txt", "r");
                 if(!f2) {
+                    printf("hehe\n");
                     break;
                 }
 
                 sleep(sleeptime);
+                printf("hehe\n");
                 struct stat i;
 
                 if(fstat(fileno(f2), &i)){
                     sleep(sleeptime);
+                    printf("hehe\n");
                     fclose(f2);
                     break;
                 };
 
                 sleep(sleeptime);
+                printf("hehe\n");
                 char *buf = malloc(i.st_size + 1);
                 if(buf == NULL) {
                     sleep(sleeptime);
+                    printf("hehe\n");
                     fclose(f2);
                     break;
                 }
 
                 sleep(sleeptime);
+                printf("hehe\n");
                 if(fread(buf, 1, i.st_size, f2) != i.st_size){
                     sleep(sleeptime);
                     fclose(f2);
@@ -73,13 +82,15 @@ int main(int argc, char const *argv[]){
                 sleep(sleeptime);
                 break;
             }
-            case 2: {
+            case 3: {
                 pid_t pid = fork();
+                printf("hehe\n");
                 sleep(sleeptime);
 
                 if (pid != 0){
                     int status;
                     while (wait(&status) != -1 ){
+                        printf("hehe\n");
                         sleep(sleeptime);
                     }
                 }
