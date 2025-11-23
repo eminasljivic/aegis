@@ -108,7 +108,7 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "at.sljivic.aegis.App.jvm.kt"
+        mainClass = "at.sljivic.aegis.AppJvmKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
