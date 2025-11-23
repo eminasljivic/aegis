@@ -39,82 +39,109 @@ std::unordered_set<uint32_t> syscalls_to_restrict_stage_2{};
 uint32_t condition = UINT32_MAX;
 bool in_stage_2 = false;
 
-void run_tracer(pid_t child_pid) {
+void run_tracer(pid_t child_pid)
+{
     fprintf(stderr, "starting to trace...\n");
     int status;
     long syscall_num;
 
     int waitpid_ret = waitpid(child_pid, &status, 0);
-    if (waitpid_ret == -1) {
+    if (waitpid_ret == -1)
+    {
         perror("waitpid");
         return;
     }
 
-    if (ptrace(PTRACE_SETOPTIONS, child_pid, 0, PTRACE_O_TRACESYSGOOD) == -1) {
+    if (ptrace(PTRACE_SETOPTIONS, child_pid, 0, PTRACE_O_TRACESYSGOOD) == -1)
+    {
         perror("ptrace SETOPTIONS");
     }
 
-    while (WIFSTOPPED(status)) {
+    bool in_syscall = false;
+    while (WIFSTOPPED(status))
+    {
         ARCH_REGS_TYPE regs;
 
-        if (ptrace(PTRACE_SYSCALL, child_pid, 0, 0) == -1) {
+        if (ptrace(PTRACE_SYSCALL, child_pid, 0, 0) == -1)
+        {
             if (errno == ESRCH)
                 break;
             perror("ptrace SYSCALL (continue)");
             break;
         }
 
-        if (waitpid(child_pid, &status, 0) == -1) {
+        if (waitpid(child_pid, &status, 0) == -1)
+        {
             if (errno == ECHILD || errno == ESRCH)
                 break;
             perror("waitpid");
             break;
         }
 
-        if (WIFEXITED(status)) {
+        if (WIFEXITED(status))
+        {
             fprintf(stderr, "Child exited with status %d\n", WEXITSTATUS(status));
             int output_file = open("/tmp/HackaTUM/res", O_RDWR | O_CREAT);
-            if (output_file < 0) {
+            if (output_file < 0)
+            {
                 perror("open");
                 fprintf(stderr, "Failed to open result file :(\n");
                 exit(1);
             }
             std::string status_as_str = std::to_string(status);
-            if (write(output_file, status_as_str.data(), status_as_str.size() + 1) < 0) {
+            if (write(output_file, status_as_str.data(), status_as_str.size() + 1) < 0)
+            {
                 fprintf(stderr, "Failed to write to result file :(\n");
             }
             close(output_file);
             exit(0);
         }
 
-        if (WIFSTOPPED(status) && (WSTOPSIG(status) == (SIGTRAP | 0x80))) {
+        if (WIFSTOPPED(status) && (WSTOPSIG(status) == (SIGTRAP | 0x80)))
+        {
+            if (!in_syscall)
+            {
 
-            if (ptrace(PTRACE_GETREGS, child_pid, 0, &regs) == -1) {
-                // Check if the error is due to the process having exited
-                if (errno == ESRCH)
+                if (ptrace(PTRACE_GETREGS, child_pid, 0, &regs) == -1)
+                {
+                    // Check if the error is due to the process having exited
+                    if (errno == ESRCH)
+                        break;
+                    perror("ptrace GETREGS");
                     break;
-                perror("ptrace GETREGS");
-                break;
-            }
+                }
 
-            syscall_num = regs.SYSCALL_REG_FIELD;
-            printf("%ld\n", syscall_num);
+                syscall_num = regs.SYSCALL_REG_FIELD;
+                printf("%ld\n", syscall_num);
 
-            if (in_stage_2 && syscalls_to_restrict_stage_2.find(syscall_num) != syscalls_to_restrict_stage_2.end()) {
-                // KILL ITTTTTTTTTTTTTTTTTTTTTTTTTTTTT
-                if (kill(child_pid, SIGKILL) < 0) {
-                    fprintf(stderr, "killing did not work\n");
-                } else
-                    fprintf(stderr, "Killed my child hehe :>\n");
-            }
+                if (in_stage_2 && syscalls_to_restrict_stage_2.find(syscall_num) != syscalls_to_restrict_stage_2.end())
+                {
+                    // KILL ITTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+                    if (kill(child_pid, SIGKILL) < 0)
+                    {
+                        fprintf(stderr, "killing did not work\n");
+                    }
+                    else
+                        fprintf(stderr, "Killed my child hehe :>\n");
+                }
 
-            if (condition != UINT32_MAX && syscall_num == condition) {
-                fprintf(stderr, "entering stage 2\n");
-                in_stage_2 = true;
-                condition = UINT32_MAX;
+                in_syscall = true;
+                if (condition != UINT32_MAX && syscall_num == condition)
+                {
+                    fprintf(stderr, "entering stage 2\n");
+                    in_stage_2 = true;
+                    condition = UINT32_MAX;
+                }
             }
-        } else {
-            if (ptrace(PTRACE_CONT, child_pid, 0, WSTOPSIG(status)) == -1) {
+            else
+            {
+                in_syscall = false;
+            }
+        }
+        else
+        {
+            if (ptrace(PTRACE_CONT, child_pid, 0, WSTOPSIG(status)) == -1)
+            {
                 perror("ptrace CONT");
                 break;
             }
@@ -122,8 +149,10 @@ void run_tracer(pid_t child_pid) {
     }
 }
 
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
+int main(int argc, char *argv[])
+{
+    if (argc < 2)
+    {
         fprintf(stderr,
                 "Usage: %s <num_syscalls_to_restrict>"
                 "[sysnr1 sysnr2 ... ]"
@@ -137,7 +166,8 @@ int main(int argc, char* argv[]) {
     uint32_t num_syscalls_to_restrict = atoi(argv[1]);
     std::vector<uint32_t> syscalls_to_restrict;
 
-    for (size_t i = 0; i < num_syscalls_to_restrict; ++i) {
+    for (size_t i = 0; i < num_syscalls_to_restrict; ++i)
+    {
         syscalls_to_restrict.push_back(atoi(argv[2 + i]));
     }
 
@@ -146,24 +176,28 @@ int main(int argc, char* argv[]) {
 
     uint32_t num_syscalls_to_restrict_stage_2 = 0;
 
-    if (stage_2) {
+    if (stage_2)
+    {
         fprintf(stderr, "two stage sandboxing active\n");
         condition = atoi(argv[2 + num_syscalls_to_restrict + 1]);
         fprintf(stderr, "condition: %d\n", condition);
         num_syscalls_to_restrict_stage_2 = atoi(argv[2 + num_syscalls_to_restrict + 2]);
 
         fprintf(stderr, "supposedly %d args for stage 2 sandbox\n", num_syscalls_to_restrict_stage_2);
-        for (size_t i = 0; i < num_syscalls_to_restrict_stage_2; ++i) {
+        for (size_t i = 0; i < num_syscalls_to_restrict_stage_2; ++i)
+        {
             syscalls_to_restrict_stage_2.insert(atoi(argv[2 + num_syscalls_to_restrict + 3 + i]));
         }
     }
 
     fprintf(stderr, "Stage 1: \n");
-    for (auto& syscall : syscalls_to_restrict) {
+    for (auto &syscall : syscalls_to_restrict)
+    {
         fprintf(stderr, "%d ", syscall);
     }
     fprintf(stderr, "\n Stage 2: \n");
-    for (auto& syscall : syscalls_to_restrict_stage_2) {
+    for (auto &syscall : syscalls_to_restrict_stage_2)
+    {
         fprintf(stderr, "%d ", syscall);
     }
     fprintf(stderr, "\n\nexecuting %s\n",
@@ -171,25 +205,32 @@ int main(int argc, char* argv[]) {
 
     pid_t pid = fork();
 
-    if (pid == -1) {
+    if (pid == -1)
+    {
         perror("fork");
         return EXIT_FAILURE;
-    } else if (pid == 0) {
+    }
+    else if (pid == 0)
+    {
         mkfifo("/tmp/HackaTUM/program_out_fifo", 0777);
         int fd = open("/tmp/HackaTUM/program_out_fifo", O_WRONLY);
-        if (fd < 0) {
+        if (fd < 0)
+        {
             fprintf(stderr, "Error opening fd");
         }
-        if (dup2(fd, 1) < 0) {
+        if (dup2(fd, 1) < 0)
+        {
             fprintf(stderr, "Error duplicating fd");
         }
 
         mkfifo("/tmp/HackaTUM/program_err_fifo", 0777);
         int fd2 = open("/tmp/HackaTUM/program_err_fifo", O_WRONLY);
-        if (dup2(fd2, 2) < 0) {
+        if (dup2(fd2, 2) < 0)
+        {
             fprintf(stderr, "Error duplicating fd2");
         }
-        if (ptrace(PTRACE_TRACEME, 0, NULL, NULL) == -1) {
+        if (ptrace(PTRACE_TRACEME, 0, NULL, NULL) == -1)
+        {
             perror("ptrace TRACEME");
             _exit(EXIT_FAILURE);
         }
@@ -200,7 +241,9 @@ int main(int argc, char* argv[]) {
 
         perror("execvp");
         _exit(EXIT_FAILURE);
-    } else {
+    }
+    else
+    {
         run_tracer(pid);
     }
 

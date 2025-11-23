@@ -33,13 +33,13 @@ fun LogScreen(path: String, args: String, policyFile: String) {
             when (event) {
                 is TraceEvent.SyscallEvent -> {
                     syscallEvents.add(LogEntry(LogType.SYSCALL, "${event.name.name} of type ${event.name.type}"))
-                    println(syscallEvents)
+                    //println(syscallEvents)
                 }
                 is TraceEvent.AppOut -> {
                     app.add(LogEntry(LogType.APP_OUT, event.msg))
                 }
                 is TraceEvent.AppErr -> {
-                    app.add(LogEntry(LogType.APP_ERR, event.msg))
+                   app.add(LogEntry(LogType.APP_ERR, event.msg))
                 }
                 TraceEvent.Finished -> {
                     syscallEvents.add(LogEntry(LogType.FINISHED, "---- FINISHED ----"))

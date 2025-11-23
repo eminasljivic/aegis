@@ -64,6 +64,7 @@ actual fun executeExecutable(
             process.inputStream.bufferedReader().useLines { lines ->
                 lines.forEach {
                     procOutBuffer.append(it)
+                    println(it)
                     procOutBuffer.append("\n".toString())
                 }
             }
