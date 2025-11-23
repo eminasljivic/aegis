@@ -1,4 +1,4 @@
-package at.sljivic.aegis
+package at.sljivic.aegis.logic
 
 class Tracer {
     companion object {
