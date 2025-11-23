@@ -53,7 +53,7 @@ fun MainScreen(
                 }
 
                 selectedFile?.let { file ->
-                    LogScreen(file)
+                    LogScreen(file, settingsRepository.getArgs())
                 }
             }
         }

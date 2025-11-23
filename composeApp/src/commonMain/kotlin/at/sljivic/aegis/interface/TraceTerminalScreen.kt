@@ -37,14 +37,14 @@ enum class LogType {
 }
 
 @Composable
-fun LogScreen(path: String) {
+fun LogScreen(path: String, args: String) {
     var lines by remember { mutableStateOf<List<String>>(emptyList()) }
 
     val app = remember { mutableStateListOf<LogEntry>() }
     val syscallEvents = remember { mutableStateListOf<LogEntry>() }
 
-    LaunchedEffect(path) {
-        runTrace(path).collect { event ->
+    LaunchedEffect(path, args) {
+        runTrace(path, args).collect { event ->
             when (event) {
                 is TraceEvent.SyscallEvent -> {
                     syscallEvents.add(LogEntry(LogType.SYSCALL, "${event.name.name} of type ${event.name.type}"))

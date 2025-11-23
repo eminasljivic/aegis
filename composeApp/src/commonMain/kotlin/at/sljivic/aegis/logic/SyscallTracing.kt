@@ -112,9 +112,9 @@ sealed interface TraceEvent {
     data object Finished: TraceEvent
 }
 
-fun runTrace(path: String): Flow<TraceEvent> = flow {
-    val sandboxConfig = SandboxingOptions(arrayListOf(), arrayListOf(), 1)
-    val traceResult = traceExecutable(path, listOf(), 60, sandboxConfig)
+fun runTrace(path: String, args:String): Flow<TraceEvent> = flow {
+    val sandboxConfig = SandboxingOptions(arrayListOf(), arrayListOf(), 1337)
+    val traceResult = traceExecutable(path, listOf(args), 60, sandboxConfig)
 
     var times = 0
     var last = false
