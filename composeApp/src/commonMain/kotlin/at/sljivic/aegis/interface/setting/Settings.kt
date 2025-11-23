@@ -7,7 +7,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.compose.AppTheme
 
 @Composable
 fun SettingsScreen(
@@ -25,36 +25,38 @@ fun SettingsScreen(
     val darkMode by viewModel.darkMode.collectAsState()
     val sandbox by viewModel.sandbox.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    AppTheme(darkTheme = darkMode) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Text("Settings", style = MaterialTheme.typography.headlineMedium)
-            if (onBack != null) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Settings")
+                if (onBack != null) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
                 }
             }
+
+            SettingsToggle(
+                title = "Dark Mode",
+                value = darkMode,
+                onToggle = { viewModel.toggleDarkMode() }
+            )
+
+            SettingsToggle(
+                title = "Sandbox Mode",
+                value = sandbox,
+                onToggle = { viewModel.toggleSandbox() }
+            )
         }
-
-        SettingsToggle(
-            title = "Dark Mode",
-            value = darkMode,
-            onToggle = { viewModel.toggleDarkMode() }
-        )
-
-        SettingsToggle(
-            title = "Sandbox Mode",
-            value = sandbox,
-            onToggle = { viewModel.toggleSandbox() }
-        )
     }
 }
 
@@ -72,7 +74,7 @@ fun SettingsToggle(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, style = MaterialTheme.typography.bodyLarge)
+        Text(title)
         Switch(checked = value, onCheckedChange = { onToggle() })
     }
 }

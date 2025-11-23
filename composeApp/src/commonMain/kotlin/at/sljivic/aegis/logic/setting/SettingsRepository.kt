@@ -3,8 +3,9 @@ package at.sljivic.aegis.logic.setting
 import kotlinx.serialization.json.Json
 import java.io.File
 
+
 class SettingsRepository(
-    private val file: File = File(System.getProperty("user.home"), "app_settings.json")
+    private val file: File
 ) {
     private val json = Json { prettyPrint = true }
     private var cachedSettings: AppSettings? = null

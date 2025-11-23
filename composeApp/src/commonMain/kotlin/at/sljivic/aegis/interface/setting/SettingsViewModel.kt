@@ -6,8 +6,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(
-    private val repo: SettingsRepository,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
+    val repo: SettingsRepository,
+    val scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 ) {
     private val _darkMode = MutableStateFlow(repo.isDarkMode())
     val darkMode: StateFlow<Boolean> = _darkMode

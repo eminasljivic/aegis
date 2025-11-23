@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import at.sljivic.aegis.MyActivityHolder.currentActivity
 import at.sljivic.aegis.logic.setting.SettingsRepository
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.io.File
 import kotlin.coroutines.resume
 
 class MainActivity : ComponentActivity() {
@@ -37,7 +38,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        val repo = SettingsRepository()
+        val repo = SettingsRepository(File(filesDir, "app_settings.json"))
         val viewModel = SettingsViewModel(repo, lifecycleScope)
 
         currentActivity = this

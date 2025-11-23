@@ -20,7 +20,8 @@ fun App(settingsViewModel: SettingsViewModel) {
 
     when (currentScreen) {
         Screen.MAIN -> MainScreen(
-            onSettingsClick = { currentScreen = Screen.SETTINGS }
+            onSettingsClick = { currentScreen = Screen.SETTINGS },
+            settingsViewModel.repo
         )
 
         Screen.SETTINGS -> SettingsScreen(
