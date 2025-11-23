@@ -7,12 +7,17 @@ import kotlin.coroutines.resume
 
 actual fun provideFilePicker(): FilePicker = object : FilePicker {
     override suspend fun pickFile(): String? = suspendCancellableCoroutine { cont ->
-        val dialog = FileDialog(null as Frame?, "Select a File", FileDialog.LOAD)
-        dialog.isVisible = true
+        val dialog = FileDialog(Frame(), "Select a File", FileDialog.LOAD)
 
-        if (dialog.file != null) {
-            val path = dialog.directory + dialog.file
-            cont.resume(path)
+        // Run the dialog on the EDT
+        java.awt.EventQueue.invokeLater {
+            dialog.isVisible = true
+            val result = if (dialog.file != null) {
+                dialog.directory + dialog.file
+            } else {
+                null
+            }
+            cont.resume(result)
         }
     }
 }

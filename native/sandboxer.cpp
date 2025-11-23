@@ -2,7 +2,6 @@
 #include <cstdlib>
 #include <errno.h>
 #include <iostream>
-#include "linux_compat.h"
 #include <linux/filter.h>
 #include <linux/seccomp.h>
 #include <seccomp.h>
