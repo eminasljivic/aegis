@@ -23,7 +23,6 @@ fun MainScreen(
     settingsRepository: SettingsRepository
 ) {
     var darkMode by remember { mutableStateOf(settingsRepository.isDarkMode()) }
-    var syscalls by remember { mutableStateOf<List<Syscall>>(emptyList()) }
     var selectedFile by remember { mutableStateOf<String?>(null) }
 
     AppTheme(darkTheme = darkMode) {
@@ -54,7 +53,7 @@ fun MainScreen(
                 }
 
                 selectedFile?.let { file ->
-                    TraceTerminal(file)
+                    LogScreen(file)
                 }
             }
         }
