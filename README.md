@@ -1,3 +1,7 @@
+# Aegis
+
+Aegis is a lightweight syscall monitoring and sandboxing solution. It was submitted as part of the Jetbrains Challenge at HackaTUM 2025 by Dominik M. Weber, Emina Sljivic and Hanna Körkel.
+
 ## Build instructions
 
 For JVM on Linux, just run make. For Android Native, please use IntelliJ and just hit the play button upon opening the project.
