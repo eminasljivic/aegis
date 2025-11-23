@@ -53,6 +53,8 @@ data class TracingResult(
         val tracerProc: Process
 )
 
+expect fun getTracerPath(): String
+
 fun traceExecutable(
         executablePath: String,
         args: List<String>,
