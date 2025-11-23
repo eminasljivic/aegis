@@ -30,35 +30,36 @@ import com.example.compose.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(onSettingsClick: () -> Unit
-               settingsRepository: SettingsRepository
+fun MainScreen(
+    onSettingsClick: () -> Unit,
+    settingsRepository: SettingsRepository
 ) {
     var darkMode by remember { mutableStateOf(settingsRepository.isDarkMode()) }
     var syscalls by remember { mutableStateOf<List<Syscall>>(emptyList()) }
 
     AppTheme(darkTheme = darkMode) {
         Scaffold(
-                topBar = {
-                    TopAppBar(
-                            title = { Text("Main Page") },
-                            actions = {
-                                IconButton(onClick = onSettingsClick) {
-                                    Icon(
-                                            imageVector = Icons.Default.Settings,
-                                            contentDescription = "Settings"
-                                    )
-                                }
-                            }
-                    )
-                }
+            topBar = {
+                TopAppBar(
+                    title = { Text("Main Page") },
+                    actions = {
+                        IconButton(onClick = onSettingsClick) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings"
+                            )
+                        }
+                    }
+                )
+            }
         ) { padding ->
             Column(
-                    modifier = Modifier.fillMaxSize().padding(padding),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.fillMaxSize().padding(padding),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 FilePickerButton(
-                        filePicker = provideFilePicker(),
+                    filePicker = provideFilePicker(),
                 ) { fileName ->
                     syscalls = getSyscallList(fileName) // ← update state
                 }
