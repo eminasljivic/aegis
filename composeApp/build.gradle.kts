@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    kotlin("plugin.serialization") version "1.9.0" // or your Kotlin version
 }
 
 kotlin {
@@ -41,7 +42,6 @@ kotlin {
             implementation(libs.androidx.datastore)
             implementation(libs.androidx.datastore.preferences)
             implementation(libs.kotlinx.serialization.json)
-
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
