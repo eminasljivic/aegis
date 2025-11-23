@@ -1,17 +1,6 @@
 package at.sljivic.aegis
 
 
-import java.io.BufferedReader
-import java.io.File
-import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
-import at.sljivic.aegis.PolicyRule
-import at.sljivic.aegis.syscallNumToSyscall
-import at.sljivic.aegis.getSyscallList
-import at.sljivic.aegis.getSyscallListMock
-import kotlin.concurrent.thread
-import kotlin.math.sign
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,13 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.compose.darkBackground
-import com.example.compose.darkForeground
-import com.example.compose.lightBackground
-import com.example.compose.lightForeground
-import com.example.compose.AppTheme
+import com.example.compose.*
 import kotlinx.coroutines.delay
-
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 
 fun getTraceStrings(Syscalls: ArrayList<Syscall>): List<String> {
@@ -82,8 +67,8 @@ fun App(filePicker: FilePicker) {
                 )
 
             }
-            val file_only_policy = ArrayList<OperationType>(listOf(OperationType.Network, OperationType.ProcessManagement));
-            createPolicy(file_only_policy, "/tmp/HackaTUM/gen_policy.aegis")
+            // val file_only_policy = ArrayList<OperationType>(listOf(OperationType.Network, OperationType.ProcessManagement));
+            // createPolicy(file_only_policy, "/tmp/HackaTUM/gen_policy.aegis")
 
             Button(
                 onClick = { filePicker.pickFile()
@@ -100,7 +85,7 @@ fun App(filePicker: FilePicker) {
 
                 var path = "/bin/ls"
                 // trace file
-                val traceResult = getSyscallList(path)()
+                val traceResult = getSyscallList(path)
 
                 var terminalLines by remember { mutableStateOf(listOf("Starting...")) }
 
@@ -116,6 +101,7 @@ fun App(filePicker: FilePicker) {
 
                     // Left: "terminal"
                     TerminalPane(
+                        filePicker,
                         lines = terminalLines,
                         modifier = Modifier
                         .heightIn(max = 300.dp)
@@ -141,6 +127,7 @@ fun App(filePicker: FilePicker) {
 
 @Composable
 fun TerminalPane(
+    filePicker: FilePicker,
     lines: List<String>,
     modifier: Modifier = Modifier
 ) {

@@ -504,7 +504,7 @@ actual fun getNumSyscalls(): Int {
     return aarch64_android_syscall_num_to_name.size
 }
 
-actual fun getSyscallsOfType(type: OperationTypeType): ArrayList<String> {
+actual fun getSyscallsOfType(type: OperationType): ArrayList<String> {
     var fittingSyscalls = ArrayList<String>()
     for (syscall in aarch64_android_syscall_num_to_name) {
         if (syscall.type == type) {
