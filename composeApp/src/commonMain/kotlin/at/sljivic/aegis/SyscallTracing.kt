@@ -42,23 +42,65 @@ class StreamingBuffer {
 }
 
 data class TracingResult(
-    val tracerOut: StreamingBuffer,
-    val tracerErr: StreamingBuffer,
-    val appOut: StreamingBuffer,
-    val appErr: StreamingBuffer,
-    val tracerOutThread: Thread,
-    val tracerErrThread: Thread,
-    val appOutThread: Thread,
-    val appErrThread: Thread,
-    val tracerProc: Process
+        val tracerOut: StreamingBuffer,
+        val tracerErr: StreamingBuffer,
+        val appOut: StreamingBuffer,
+        val appErr: StreamingBuffer,
+        val tracerOutThread: Thread,
+        val tracerErrThread: Thread,
+        val appOutThread: Thread,
+        val appErrThread: Thread,
+        val tracerProc: Process
 )
 
-expect fun traceExecutable(
-    executablePath: String,
-    args: List<String>,
-    timeoutSeconds: Long,
-    sandbox: SandboxingOptions
-): TracingResult
+expect fun getTracerPath(): String
+
+expect fun executeExecutable(
+        executablePath: String,
+        args: List<String> = emptyList(),
+        timeoutSeconds: Long = 60
+): TracingResult 
+
+fun traceExecutable(
+        executablePath: String,
+        args: List<String>,
+        timeoutSeconds: Long,
+        sandbox: SandboxingOptions
+): TracingResult {
+    val executable = getTracerPath()
+
+    val arguments = ArrayList<String>()
+    println(sandbox.syscall_restrictions.size.toString())
+    arguments.add(sandbox.syscall_restrictions.size.toString())
+    for (sys in sandbox.syscall_restrictions) {
+        arguments.add(sys.toString())
+    }
+    if (sandbox.syscall_restrictions_stage_2.isNotEmpty()) {
+        arguments.add("-two-step")
+        arguments.add(sandbox.condition.toString())
+        arguments.add(sandbox.syscall_restrictions_stage_2.size.toString())
+        for (sys in sandbox.syscall_restrictions_stage_2) {
+            arguments.add(sys.toString())
+        }
+    } else {
+        arguments.add("-one-step")
+    }
+
+    arguments.add(executablePath)
+    arguments.addAll(args)
+
+    println("Executing command: $executable ${arguments.joinToString(" ")}")
+
+    val tracingRes = executeExecutable(executable, arguments)
+
+    // println("\n--- Execution Result ---")
+    // println("Exit Code: $code")
+    // println("Output:")
+    // println(output)
+    // println("------------------------")
+
+    return tracingRes
+}
 
 fun getSyscallList(path: String): ArrayList<Syscall> {
     val sandbox_config = parsePolicyFile("/tmp/HackaTUM/socket_when.aegis")
@@ -107,4 +149,5 @@ fun getSyscallList(path: String): ArrayList<Syscall> {
     }
 
     return syscalls_in_order
+}
 }
