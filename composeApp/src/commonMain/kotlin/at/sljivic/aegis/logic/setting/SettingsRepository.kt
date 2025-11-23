@@ -25,6 +25,7 @@ class SettingsRepository(
 
     fun isDarkMode() = load().darkMode
     fun isSandboxMode() = load().sandboxMode
+    fun getArgs() = load().args
 
     fun setDarkMode(enabled: Boolean) {
         val current = load()
@@ -34,5 +35,10 @@ class SettingsRepository(
     fun setSandboxMode(enabled: Boolean) {
         val current = load()
         save(current.copy(sandboxMode = enabled))
+    }
+
+    fun setArgs(newargs: String) {
+        var current = load()
+        save(current.copy(args = newargs))
     }
 }

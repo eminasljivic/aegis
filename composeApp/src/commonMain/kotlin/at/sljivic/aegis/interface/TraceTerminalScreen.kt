@@ -33,8 +33,8 @@ fun TraceTerminal(path: String) {
             val line = when (event) {
                 is TraceEvent.SyscallEvent -> "SYS: ${event.name}"
                 is TraceEvent.TracerErr    -> ""
-                is TraceEvent.AppOut       -> "APP: ${event.msg}"
-                is TraceEvent.AppErr       -> "APP ERR: ${event.msg}"
+                is TraceEvent.AppOut       -> "${event.msg}"
+                is TraceEvent.AppErr       -> "APP STDERR: ${event.msg}"
                 TraceEvent.Finished        -> "---- FINISHED ----"
             }
             lines = lines + line
