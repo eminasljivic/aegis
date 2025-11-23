@@ -16,7 +16,11 @@ kotlin {
         }
     }
 
-    jvm()
+    jvm {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+    }
 
     sourceSets {
         androidMain.dependencies {
@@ -82,7 +86,8 @@ android {
     sourceSets {
         getByName("main") {
             assets {
-                srcDirs("src\\androidMain\\assets", "src\\main\\assets",
+                srcDirs(
+                    "src\\androidMain\\assets", "src\\main\\assets",
                     "src\\androidMain\\assets",
                     "src\\androidMain\\assets"
                 )
