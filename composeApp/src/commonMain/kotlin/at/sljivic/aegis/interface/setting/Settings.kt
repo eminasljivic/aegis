@@ -14,12 +14,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import at.sljivic.aegis.core.theme.AppTheme
+import at.sljivic.aegis.filePicker.FilePickerButton
+import at.sljivic.aegis.filePicker.provideFilePicker
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
     val darkMode by viewModel.darkMode.collectAsState()
     val sandbox by viewModel.sandbox.collectAsState()
     val args by viewModel.args.collectAsState()
+    val policy by viewModel.policyFile.collectAsState()
 
     AppTheme(darkTheme = darkMode) {
         Column(
@@ -30,9 +33,9 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 if (onBack != null) {
                     IconButton(onClick = onBack) {
@@ -47,22 +50,41 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
             }
 
             SettingsToggle(
-                    title = "Dark Mode",
-                    value = darkMode,
-                    onToggle = { viewModel.toggleDarkMode() }
+                title = "Dark Mode",
+                value = darkMode,
+                onToggle = { viewModel.toggleDarkMode() }
             )
 
             SettingsToggle(
-                    title = "Sandbox Mode",
-                    value = sandbox,
-                    onToggle = { viewModel.toggleSandbox() }
+                title = "Sandbox Mode",
+                value = sandbox,
+                onToggle = { viewModel.toggleSandbox() }
             )
 
             TextField(
-                    value = args,
-                    onValueChange = { viewModel.setArgs(it) },
-                    label = { Text("Arguments") }
+                value = args,
+                onValueChange = { viewModel.setArgs(it) },
+                label = { Text("Arguments") }
             )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+
+                TextField(
+                    value = policy,
+                    readOnly = true,
+                    label = { Text("Selected policy") },
+                    onValueChange = {}
+                )
+
+                FilePickerButton(
+                    "Select",
+                    provideFilePicker()
+                ) { filePath -> viewModel.setPolicyFile(filePath) }
+
+            }
         }
     }
 }
@@ -70,9 +92,9 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: (() -> Unit)? = null) {
 @Composable
 fun SettingsToggle(title: String, value: Boolean, onToggle: () -> Unit) {
     Row(
-            modifier = Modifier.fillMaxWidth().clickable { onToggle() }.padding(vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier.fillMaxWidth().clickable { onToggle() }.padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(title, color = MaterialTheme.colorScheme.onBackground)
         Switch(checked = value, onCheckedChange = { onToggle() })

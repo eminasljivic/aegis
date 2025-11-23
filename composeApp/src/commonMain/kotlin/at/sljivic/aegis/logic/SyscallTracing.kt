@@ -112,8 +112,11 @@ sealed interface TraceEvent {
     data object Finished: TraceEvent
 }
 
-fun runTrace(path: String, args:String): Flow<TraceEvent> = flow {
-    val sandboxConfig = SandboxingOptions(arrayListOf(), arrayListOf(), 1337)
+fun runTrace(path: String, args: String, policyFile: String): Flow<TraceEvent> = flow {
+    var sandboxConfig = SandboxingOptions(arrayListOf(), arrayListOf(), 1337)
+    if (policyFile.isNotEmpty() && path.isNotBlank()) {
+        sandboxConfig = parsePolicyFile(policyFile)
+    }
     val traceResult = traceExecutable(path, listOf(args), 60, sandboxConfig)
 
     var times = 0

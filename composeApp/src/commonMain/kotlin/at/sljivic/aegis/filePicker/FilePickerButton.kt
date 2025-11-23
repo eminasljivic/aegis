@@ -9,6 +9,7 @@ typealias OnFilePicked = suspend (filePath: String) -> Unit
 
 @Composable
 fun FilePickerButton(
+    text: String,
     filePicker: FilePicker,
     onFilePicked: OnFilePicked
 ) {
@@ -23,6 +24,6 @@ fun FilePickerButton(
             }
         }
     }) {
-        Text("Pick a File")
+        Text(text)
     }
 }

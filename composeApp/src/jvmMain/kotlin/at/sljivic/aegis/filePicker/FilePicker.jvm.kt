@@ -7,7 +7,7 @@ import kotlin.coroutines.resume
 
 actual fun provideFilePicker(): FilePicker = object : FilePicker {
     override suspend fun pickFile(): String? = suspendCancellableCoroutine { cont ->
-        val dialog = FileDialog(Frame(), "Select a File", FileDialog.LOAD)
+        val dialog = FileDialog(Frame(), "Select", FileDialog.LOAD)
 
         // Run the dialog on the EDT
         java.awt.EventQueue.invokeLater {

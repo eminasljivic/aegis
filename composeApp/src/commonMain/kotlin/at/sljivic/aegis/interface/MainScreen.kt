@@ -46,13 +46,14 @@ fun MainScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 FilePickerButton(
+                    text = "Select a executable",
                     filePicker = provideFilePicker(),
                 ) { fileName ->
                     selectedFile = fileName
                 }
 
                 selectedFile?.let { file ->
-                    LogScreen(file, settingsRepository.getArgs())
+                    LogScreen(file, settingsRepository.getArgs(), settingsRepository.getPolicyFile())
                 }
             }
         }

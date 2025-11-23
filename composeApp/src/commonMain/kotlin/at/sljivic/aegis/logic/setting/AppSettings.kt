@@ -6,5 +6,6 @@ import kotlinx.serialization.Serializable
 data class AppSettings(
     val darkMode: Boolean = false,
     val sandboxMode: Boolean = false,
-    val args: String = ""
+    val args: String = "",
+    val policyFile: String = ""
 )

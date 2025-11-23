@@ -26,6 +26,7 @@ class SettingsRepository(
     fun isDarkMode() = load().darkMode
     fun isSandboxMode() = load().sandboxMode
     fun getArgs() = load().args
+    fun getPolicyFile() = load().policyFile
 
     fun setDarkMode(enabled: Boolean) {
         val current = load()
@@ -38,7 +39,12 @@ class SettingsRepository(
     }
 
     fun setArgs(newargs: String) {
-        var current = load()
+        val current = load()
         save(current.copy(args = newargs))
+    }
+
+    fun setPolicyFile(policyFile: String) {
+        val current = load()
+        save(current.copy(policyFile = policyFile))
     }
 }
