@@ -33,74 +33,10 @@ import kotlinx.coroutines.delay
 
 
 
-
-fun getSyscallListMock(): ArrayList<Syscall> {
-    println("=== MOCK MODUS ===")
-
-    // Simuliertes TracingResult
-    val mockBuffer = StreamingBuffer()
-
-    // Füge verschiedene Syscalls hinzu (simulierte Ausgabe)
-    val mockSyscalls = listOf(12, 3, 22, 2, 1, 60, 9, 11, 158, 231, 12, 3, 22, 2, 1, 60, 9, 11, 158, 231, 12, 3, 22, 2, 1, 60, 9, 11, 158, 231, 12, 3, 22, 2, 1, 60, 9, 11, 158, 231)
-    mockSyscalls.forEach { syscallNum ->
-        mockBuffer.append(syscallNum.toString())
-    }
-
-    val traceResult = TracingResult(
-        tracerOut = mockBuffer,
-        tracerErr = StreamingBuffer(),
-        appOut = StreamingBuffer(),
-        appErr = StreamingBuffer(),
-        tracerOutThread = Thread(),
-        tracerErrThread = Thread(),
-        appOutThread = Thread(),
-        appErrThread = Thread(),
-        tracerProc = createMockProcess()
-    )
-
-    val syscalls_in_order = ArrayList<Syscall>()
-    var last_time = false
-
-    while (true) {
-        val outChunk = traceResult.tracerOut.drain()
-        if (outChunk.isNotEmpty() && outChunk.isNotBlank()) {
-            val outs = outChunk.split("\n")
-            for(out_syscall in outs) {
-                if(out_syscall.isEmpty() || out_syscall.isBlank()) continue
-                try {
-                    val name = syscallNumToSyscall(out_syscall.toInt())
-                    syscalls_in_order.add(name)
-                    println("MOCK Tracer OUT: $name")
-                } catch (e: Exception) {
-                    println("MOCK Fehler bei Syscall: $out_syscall")
-                }
-            }
-        }
-
-        // Simuliere dass Prozess nach 2 Iterationen "stirbt"
-        if (!last_time) {
-            last_time = true
-        } else {
-            break
-        }
-
-        Thread.sleep(100)
-    }
-
-    println("MOCK: Gefundene Syscalls: ${syscalls_in_order.size}")
-    return syscalls_in_order
-}
-
-fun createMockProcess(): Process {
-    return ProcessBuilder("echo", "mock").start().apply {
-        waitFor() // Prozess sofort beenden
-    }
-}
-
 fun getTraceStrings(Syscalls: ArrayList<Syscall>): List<String> {
     val list = ArrayList<String>()
     for(sys in Syscalls) {
-        list.add("name: ${sys.name}   || type: ${sys.type}")
+        list.add("Tracer OUT: ${sys}")
     }
     return list
 }
@@ -162,9 +98,9 @@ fun App(filePicker: FilePicker) {
 
             if(showMainStats.value) {
 
-
+                var path = "/bin/ls"
                 // trace file
-                val traceResult = getSyscallListMock()
+                val traceResult = getSyscallList(path)()
 
                 var terminalLines by remember { mutableStateOf(listOf("Starting...")) }
 
