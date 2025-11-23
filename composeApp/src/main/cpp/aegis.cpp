@@ -293,7 +293,7 @@ extern "C"
                 }
 
                 char **args = argv + 2 + num_syscalls_to_restrict + num_syscalls_to_restrict_stage_2 + ((stage_2) ? 3 : 1);
-                execvp(argv[2 + num_syscalls_to_restrict + num_syscalls_to_restrict_stage_2 + ((stage_2) ? 3 : 1)]), args);
+                execvp(argv[2 + num_syscalls_to_restrict + num_syscalls_to_restrict_stage_2 + ((stage_2) ? 3 : 1)], args);
 
                 // execvp("ls", "."); // argv[2 + num_syscalls_to_restrict], argv + 2 + num_syscalls_to_restrict;
 
