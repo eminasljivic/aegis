@@ -73,11 +73,12 @@ fun LogScreen(path: String, args: String) {
                 .weight(1f)
                 .fillMaxWidth()
                 .padding(4.dp)
-                .background(MaterialTheme.colorScheme.background, shape = RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh, shape = RoundedCornerShape(8.dp))
                 .padding(8.dp)
         ) {
             Text(
                 text = "=== App Output / Errors ===",
+                color = MaterialTheme.colorScheme.primary
             )
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
@@ -103,11 +104,12 @@ fun LogScreen(path: String, args: String) {
                 .weight(1f)
                 .fillMaxWidth()
                 .padding(4.dp)
-                .background(MaterialTheme.colorScheme.background, shape = RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh, shape = RoundedCornerShape(8.dp))
                 .padding(8.dp)
         ) {
             Text(
                 text = "=== Syscall Events ===",
+                color = MaterialTheme.colorScheme.primary
             )
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
