@@ -532,5 +532,5 @@ actual fun getSyscallsOfType(type: OperationType): ArrayList<String> {
 }
 
 actual fun getTracerPath(): String {
-    TODO("Not yet implemented")
+    return "" // Left empty on purpose
 }

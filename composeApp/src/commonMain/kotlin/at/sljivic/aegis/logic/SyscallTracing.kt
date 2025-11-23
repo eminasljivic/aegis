@@ -1,6 +1,8 @@
 package at.sljivic.aegis.logic
 
-import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 enum class OperationType {
     File,
@@ -102,57 +104,69 @@ fun traceExecutable(
     return tracingRes
 }
 
-fun getSyscallList(path: String): ArrayList<Syscall> {
-    // val sandbox_config = parsePolicyFile("/tmp/HackaTUM/socket_when.aegis")
-    // val sandbox_config = parsePolicyFile("/tmp/HackaTUM/gen_policy.aegis")
-    val sandbox_config = SandboxingOptions(arrayListOf(), arrayListOf(), 1)
-    var syscalls_in_order = ArrayList<Syscall>()
-    val traceResult = traceExecutable(path, listOf(), 60, sandbox_config)
-    // we trust it will die at some point
-    var last_time = false
+sealed interface TraceEvent {
+    data class SyscallEvent(val name: Syscall): TraceEvent
+    data class TracerErr(val msg: String): TraceEvent
+    data class AppOut(val msg: String): TraceEvent
+    data class AppErr(val msg: String): TraceEvent
+    data object Finished: TraceEvent
+}
+
+fun runTrace(path: String): Flow<TraceEvent> = flow {
+    val sandboxConfig = SandboxingOptions(arrayListOf(), arrayListOf(), 1)
+    val traceResult = traceExecutable(path, listOf(), 60, sandboxConfig)
+
     var times = 0
+    var last = false
+
     while (true) {
-        times +=1
+        times += 1
+
+        // -------- tracer OUT --------
         val outChunk = traceResult.tracerOut.drain()
-        if (outChunk.isNotEmpty() && outChunk.isNotBlank()) {
-            val outs = outChunk.split("\n")
-            for (out_syscall in outs) {
-                if (out_syscall.isEmpty() || out_syscall.isBlank()) continue
-                val name = syscallNumToSyscall(out_syscall.toInt())
-                syscalls_in_order.add(name)
-                println("Tracer OUT: $name")
+        if (outChunk.isNotBlank()) {
+            outChunk.split("\n").forEach { line ->
+                if (line.isNotBlank()) {
+                    emit(TraceEvent.SyscallEvent(syscallNumToSyscall(line.toInt())))
+                }
             }
         }
 
+        // -------- tracer ERR --------
         val errChunk = traceResult.tracerErr.drain()
-        if (errChunk.isNotEmpty() && errChunk.isNotBlank()) {
-            println("Tracer ERR: $errChunk")
+        if (errChunk.isNotBlank()) {
+            emit(TraceEvent.TracerErr(errChunk))
         }
 
+        // -------- app OUT --------
         val appOutChunk = traceResult.appOut.drain()
-        if (appOutChunk.isNotEmpty() && appOutChunk.isNotBlank()) {
-            println("app out: $appOutChunk")
+        if (appOutChunk.isNotBlank()) {
+            emit(TraceEvent.AppOut(appOutChunk))
         }
 
+        // -------- app ERR --------
         val appErrChunk = traceResult.appErr.drain()
-        if (appErrChunk.isNotEmpty() && appErrChunk.isNotBlank()) {
-            println("app ERR: $appErrChunk")
+        if (appErrChunk.isNotBlank()) {
+            emit(TraceEvent.AppErr(appErrChunk))
         }
 
-        if (last_time) break
+        // --- termination ---
+        if (last) {
+            emit(TraceEvent.Finished)
+            break
+        }
+
         if (!traceResult.tracerProc.isAlive()) {
-            println("in tracer proc not alive")
-            last_time = true
+            last = true
             traceResult.tracerOutThread.join()
             traceResult.tracerErrThread.join()
-            traceResult.appErrThread.join()
             traceResult.appOutThread.join()
+            traceResult.appErrThread.join()
         }
-        Thread.sleep(100)
-        if(times > 20) {
+
+        delay(100)
+        if (times > 20) {
             traceResult.tracerProc.destroyForcibly()
         }
     }
-
-    return syscalls_in_order
 }

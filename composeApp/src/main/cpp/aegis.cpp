@@ -156,7 +156,7 @@ extern "C"
     }
 
     JNIEXPORT jint JNICALL
-    Java_at_sljivic_aegis_Tracer_runNativeMain(JNIEnv *env, jobject obj, jobjectArray args)
+    Java_at_sljivic_aegis_logic_Tracer_runNativeMain(JNIEnv *env, jobject obj, jobjectArray args)
     {
         pid_t pid = fork();
 
